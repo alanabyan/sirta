@@ -1,0 +1,62 @@
+name: Automated Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main # Robot akan berjalan otomatis setiap Anda push ke branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengunduh kode terbaru dari repositori GitHub Anda
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan sistem Node.js di server GitHub untuk memproses Vue
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Melakukan kompilasi / Build Vue (Frontend) secara otomatis
+      - name: Build Vue Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      # 4. Mengunggah hasil build Vue (*.html, *.js) ke folder public_html Hostinger
+      - name: Deploy Frontend via SSH/SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          source: "frontend/dist/*"
+          target: "domains/://hostingersite.com"
+          strip_components: 2
+
+      # 5. Masuk ke server Hostinger untuk melakukan update otomatis pada Backend Laravel
+      - name: Deploy Backend via SSH Command
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          script: |
+            # Masuk ke folder backend proyek Anda di Hostinger
+            cd domains/://hostingersite.com/backend
+            
+            # Memaksa server Hostinger menarik pembaruan kode Laravel terbaru dari GitHub
+            git fetch --all
+            git reset --hard origin/main
+            
+            # Menjalankan pembersihan cache dan migrasi database otomatis
+            /usr/local/bin/php artisan migrate --force
+            /usr/local/bin/php artisan config:clear
+            /usr/local/bin/php artisan route:clear
+            /usr/local/bin/php artisan optimize:clear
