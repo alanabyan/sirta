@@ -35,31 +35,38 @@ jobs:
           username: ${{ secrets.HOSTINGER_USERNAME }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT }}
-          source: "frontend/dist/*"
-          target: "domains/sirta.org/public_html"
-          strip_components: 2
+          source: 'frontend/dist/*'
+          target: 'domains/sirta.org/public_html'
+          strip_components:
+            2
 
-      # 5. Masuk ke server Hostinger untuk mengupdate Backend Laravel
+      # 5. Masuk ke server Hostinger untuk melakukan update otomatis pada Backend Laravel
       - name: Deploy Backend via SSH Command
-        uses: appleboy/ssh-action@v1.0.3 # 👈 DIUPDATE KE VERSI TERBARU
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT }}
           script: |
-            # Masuk ke folder backend proyek Anda di dalam public_html
+            # 1. Masuk ke folder backend proyek Anda di dalam public_html
             cd domains/sirta.org/public_html/backend
-            
-            # Daftarkan folder git sebagai safe directory agar tidak diblokir Linux
+
+            # 2. Pastikan inisialisasi Git ada di folder ini agar tidak muncul "not a git repository"
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin https://github.com
+            fi
+
+            # 3. Daftarkan folder sebagai safe directory di Linux
             git config --global --add safe.directory $(pwd)
-            
-            # Tarik pembaruan kode Laravel terbaru dari GitHub ke server
+
+            # 4. Ambil kode terbaru dari GitHub ke server
             git fetch --all
             git reset --hard origin/main
-            
-            # Jalankan optimasi internal Laravel otomatis
-            /usr/local/bin/php artisan migrate --force
-            /usr/local/bin/php artisan config:clear
-            /usr/local/bin/php artisan route:clear
-            /usr/local/bin/php artisan optimize:clear
+
+            # 5. Jalankan optimasi Laravel menggunakan jalur asli PHP server Hostinger
+            /usr/bin/php artisan migrate --force
+            /usr/bin/php artisan config:clear
+            /usr/bin/php artisan route:clear
+            /usr/bin/php artisan optimize:clear
