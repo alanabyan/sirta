@@ -13,6 +13,15 @@ use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
+    /** Hitungan ringan untuk penanda menu; dipanggil berkala oleh frontend. */
+    public function antrean(): JsonResponse
+    {
+        return response()->json(['data' => [
+            'perlu_verifikasi' => Pengajuan::where('status', 'Menunggu Verifikasi')->count(),
+            'surat_baru' => SuratMasuk::where('status', 'Baru')->count(),
+        ]]);
+    }
+
     public function __invoke(): JsonResponse
     {
         $bulan = collect(range(5, 0))->map(function ($i) {

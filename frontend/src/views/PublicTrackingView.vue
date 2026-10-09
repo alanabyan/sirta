@@ -65,4 +65,5 @@ main { max-width: 640px; margin: 0 auto; padding: 48px 20px; }
 h1 { font-size: 28px; margin-bottom: 6px; letter-spacing: -.01em; }
 .search-box { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
 .nik4 { width: 130px; flex: none; }
+@media (max-width: 480px) { header { padding: 12px 16px; } .brand .muted { display: none; } }
 </style>

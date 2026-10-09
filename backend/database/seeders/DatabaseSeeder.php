@@ -6,6 +6,7 @@ use App\Models\Aktivitas;
 use App\Models\Arsip;
 use App\Models\Keluarga;
 use App\Models\Pengajuan;
+use App\Models\Pengaturan;
 use App\Models\Pengurus;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
@@ -19,6 +20,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->pengguna();
+        Pengaturan::create([
+            'kop' => "RUKUN TETANGGA 03 / RUKUN WARGA 20
+Perumahan Griya Kreasi Aqilla
+Desa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi",
+            'kota' => 'Bekasi',
+            'penandatangan_nama' => 'Wiyadi',
+            'penandatangan_jabatan' => 'Ketua RT 03',
+        ]);
         $kk = $this->keluarga();
         $warga = $this->warga($kk);
         $this->pengurus();
@@ -102,21 +111,19 @@ class DatabaseSeeder extends Seeder
 
     private function templates(): array
     {
-        $kop = "RUKUN TETANGGA 03 / RUKUN WARGA 20\nPerumahan Griya Kreasi Aqilla\nDesa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi";
-        $ttd = "Bekasi, {{tanggal}}\nKetua RT 03\n\n\n\nWiyadi";
         $rows = [
             ['SK-PENGANTAR', 'Surat Pengantar', 'Pengantar administrasi warga ke instansi lain',
-                "$kop\n\nSURAT PENGANTAR\nNomor: {{nomor}}\n\nYang bertanda tangan di bawah ini, Ketua RT 03 RW 20, menerangkan bahwa:\n\nNama : {{nama}}\nNIK : {{nik}}\nAlamat : {{alamat}}\n\nAdalah benar warga kami dan bermaksud mengurus: {{keperluan}}.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n$ttd"],
+                "SURAT PENGANTAR\nNomor: {{nomor}}\n\nYang bertanda tangan di bawah ini, Ketua RT 03 RW 20, menerangkan bahwa:\n\nNama : {{nama}}\nNIK : {{nik}}\nAlamat : {{alamat}}\n\nAdalah benar warga kami dan bermaksud mengurus: {{keperluan}}.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n{{ttd}}"],
             ['SK-DOMISILI', 'Surat Domisili', 'Keterangan bertempat tinggal di lingkungan RT',
-                "$kop\n\nSURAT KETERANGAN DOMISILI\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}) benar berdomisili di {{alamat}}, wilayah RT 03 / RW 20.\n\nKeperluan: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n$ttd"],
+                "SURAT KETERANGAN DOMISILI\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}) benar berdomisili di {{alamat}}, wilayah RT 03 / RW 20.\n\nKeperluan: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n{{ttd}}"],
             ['SK-KET', 'Surat Keterangan', 'Keterangan umum dari RT',
-                "$kop\n\nSURAT KETERANGAN\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\n$ttd"],
+                "SURAT KETERANGAN\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\n{{ttd}}"],
             ['SK-UND', 'Surat Undangan', 'Undangan kegiatan atau rapat warga',
-                "$kop\n\nUNDANGAN\nNomor: {{nomor}}\n\nKepada Yth. Bapak/Ibu Warga RT 03\n\nDiharapkan kehadiran Bapak/Ibu pada kegiatan: {{keperluan}}.\n\nDemikian undangan ini disampaikan, atas perhatian dan kehadirannya diucapkan terima kasih.\n\n$ttd"],
+                "UNDANGAN\nNomor: {{nomor}}\n\nKepada Yth. Bapak/Ibu Warga RT 03\n\nDiharapkan kehadiran Bapak/Ibu pada kegiatan: {{keperluan}}.\n\nDemikian undangan ini disampaikan, atas perhatian dan kehadirannya diucapkan terima kasih.\n\n{{ttd}}"],
             ['SK-NIKAH', 'Surat Pengantar Nikah', 'Pengantar administrasi pernikahan',
-                "$kop\n\nSURAT PENGANTAR NIKAH\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20 dan bermaksud melangsungkan pernikahan.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n$ttd"],
+                "SURAT PENGANTAR NIKAH\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20 dan bermaksud melangsungkan pernikahan.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n{{ttd}}"],
             ['SK-USAHA', 'Surat Keterangan Usaha', 'Keterangan usaha milik warga',
-                "$kop\n\nSURAT KETERANGAN USAHA\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, memiliki usaha: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n$ttd"],
+                "SURAT KETERANGAN USAHA\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, memiliki usaha: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n{{ttd}}"],
         ];
         $out = [];
         foreach ($rows as [$kode, $nama, $desk, $isi]) {

@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { PartyPopper, ArrowRight, Paperclip } from 'lucide-vue-next'
 import api, { errorMessage } from '@/api'
 import { formatTanggal, waktuRelatif } from '@/utils'
+import { useAntrean } from '@/stores/antrean'
 import PageHeader from '@/components/PageHeader.vue'
 import PengajuanDetailModal from '@/components/PengajuanDetailModal.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
@@ -28,6 +29,8 @@ async function load() {
     loading.value = false
   }
 }
+const antrean = useAntrean()
+watch(() => antrean.perluVerifikasi, load) // permohonan baru masuk → daftar ikut diperbarui
 onMounted(load)
 </script>
 

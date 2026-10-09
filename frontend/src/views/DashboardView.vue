@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Users, UsersRound, Clock3, Archive, ClipboardCheck, Inbox, PartyPopper, Plus, ArrowRight,
@@ -7,21 +7,27 @@ import {
 } from 'lucide-vue-next'
 import api, { errorMessage } from '@/api'
 import { useAuth } from '@/stores/auth'
+import { useAntrean } from '@/stores/antrean'
 import { formatTanggal, sapaan, waktuRelatif } from '@/utils'
 import StatusBadge from '@/components/StatusBadge.vue'
 
 const auth = useAuth()
+const antrean = useAntrean()
 const router = useRouter()
 const data = ref(null)
 const error = ref('')
 
-onMounted(async () => {
+async function muat() {
   try {
     data.value = (await api.get('/dashboard')).data.data
+    error.value = ''
   } catch (e) {
     error.value = errorMessage(e)
   }
-})
+}
+onMounted(muat)
+// Ada permohonan masuk/selesai → angka & daftar di Beranda ikut diperbarui.
+watch(() => antrean.perluVerifikasi, muat)
 
 const tanggal = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
@@ -56,7 +62,7 @@ const aksiCepat = computed(() => {
     <section class="welcome">
       <div>
         <span class="date">{{ tanggal }}</span>
-        <h2>{{ sapaan() }}, {{ auth.user.name }} 👋</h2>
+        <h2>{{ sapaan() }}, {{ auth.user?.name }} 👋</h2>
         <p>Berikut gambaran singkat administrasi RT 03 / RW 20 hari ini.</p>
       </div>
       <div v-if="aksiCepat.length" class="quick">

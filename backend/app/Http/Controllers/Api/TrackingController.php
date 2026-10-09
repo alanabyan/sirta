@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pengajuan;
+use App\Support\Masker;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,7 +33,7 @@ class TrackingController extends Controller
             'layanan' => $p->layanan,
             'status' => $p->status,
             'progress' => $p->progress,
-            'pemohon' => $this->samarkan($p->warga->nama),
+            'pemohon' => Masker::nama($p->warga->nama),
             'tanggal' => $p->created_at->toDateString(),
             'catatan' => $p->status === 'Ditolak' ? $p->catatan : null,
             'riwayat' => $p->riwayat->map(fn ($r) => [
@@ -41,14 +42,5 @@ class TrackingController extends Controller
                 'waktu' => $r->created_at->toIso8601String(),
             ])->values(),
         ]]);
-    }
-
-    /** "Ahmad Fauzan" → "Ahmad F***" agar privasi pemohon terjaga. */
-    private function samarkan(string $nama): string
-    {
-        $parts = preg_split('/\s+/', trim($nama));
-        $first = array_shift($parts);
-
-        return trim($first.' '.implode(' ', array_map(fn ($p) => mb_substr($p, 0, 1).'***', $parts)));
     }
 }

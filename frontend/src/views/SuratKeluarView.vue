@@ -7,7 +7,9 @@ import { useAuth } from '@/stores/auth'
 import { useUi } from '@/stores/ui'
 import { useList } from '@/composables/useList'
 import { useSave } from '@/composables/useSave'
-import { formatTanggal, hariIni, isiTemplate, cetakSurat } from '@/utils'
+import { formatTanggal, hariIni, isiTemplate } from '@/utils'
+import { cetakSurat } from '@/cetak'
+import SearchSelect from '@/components/SearchSelect.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import FormField from '@/components/FormField.vue'
@@ -72,9 +74,14 @@ async function simpan() {
   }
 }
 
-function cetak(s) {
+async function cetak(s) {
   if (!s.isi) return ui.error('Surat ini belum memiliki isi. Ubah surat dan pilih template terlebih dahulu.')
-  if (!cetakSurat(s)) ui.error('Pop-up diblokir browser. Izinkan pop-up untuk mencetak.')
+  const hasil = await cetakSurat(s)
+  if (hasil.ok) return
+  ui.error({
+    popup: 'Pop-up diblokir browser. Izinkan pop-up untuk situs ini lalu coba lagi.',
+    izin: 'Peran Anda tidak dapat mencetak surat bertanda tangan.',
+  }[hasil.reason] || 'Gagal menyiapkan surat. Coba lagi.')
 }
 
 const hapus = (s) => list.remove(s, { title: `Hapus surat ${s.nomor}?`, message: 'Surat keluar ini akan dihapus permanen.' })
@@ -95,7 +102,7 @@ onMounted(async () => {
     try {
       const p = (await api.get(`/pengajuan/${route.query.pengajuan}`)).data.data
       const t = templates.value.find((x) => x.nama === p.layanan)
-      buka(null, { template_surat_id: t?.id ?? '', warga_id: p.warga_id, keperluan: p.keperluan ?? '', tujuan: p.warga.nama, perihal: `${p.layanan} — ${p.warga.nama}`, status: 'Diterbitkan' })
+      buka(null, { template_surat_id: t?.id ?? '', warga_id: p.warga_id, keperluan: p.keperluan ?? '', tujuan: p.warga.nama, perihal: `${p.layanan} — ${p.warga.nama}`, status: auth.canDecide ? 'Diterbitkan' : 'Draft' })
       await susun()
     } catch (e) {
       ui.error(errorMessage(e))
@@ -133,9 +140,9 @@ onMounted(async () => {
             <td>{{ s.perihal }}<div v-if="s.template" class="cell-sub">Template: {{ s.template.nama }}</div></td>
             <td><StatusBadge :status="s.status" /></td>
             <td class="actions">
-              <button class="btn btn-soft btn-sm" @click="cetak(s)"><Printer :size="15" /> Cetak</button>
+              <button v-if="auth.canWrite" class="btn btn-soft btn-sm" @click="cetak(s)"><Printer :size="15" /> Cetak</button>
               <template v-if="auth.canWrite">
-                <button class="btn btn-icon" title="Ubah" :aria-label="`Ubah ${s.nomor}`" @click="buka(s)"><Pencil :size="17" /></button>
+                <button v-if="auth.canDecide || s.status !== 'Diterbitkan'" class="btn btn-icon" title="Ubah" :aria-label="`Ubah ${s.nomor}`" @click="buka(s)"><Pencil :size="17" /></button>
                 <button v-if="auth.canDecide" class="btn btn-icon" title="Hapus" :aria-label="`Hapus ${s.nomor}`" @click="hapus(s)"><Trash2 :size="17" /></button>
               </template>
             </td>
@@ -155,16 +162,13 @@ onMounted(async () => {
         </select>
       </FormField>
       <FormField v-if="!form.id" label="Untuk warga" hint="Opsional. Mengisi nama, NIK, dan alamat otomatis.">
-        <select v-model="form.warga_id" class="select">
-          <option value="">— Pilih warga —</option>
-          <option v-for="w in wargaOpsi" :key="w.id" :value="w.id">{{ w.nama }}</option>
-        </select>
+        <SearchSelect v-model="form.warga_id" :options="wargaOpsi.map((w) => ({ value: w.id, label: w.nama, sub: w.keluarga?.alamat }))" placeholder="— Pilih warga —" search-placeholder="Ketik nama warga…" clearable />
       </FormField>
       <FormField v-if="!form.id" label="Keperluan" full hint="Dimasukkan ke bagian {{keperluan}} pada template.">
         <input v-model="form.keperluan" class="input" placeholder="mis. Pengurusan KTP-el" @change="susun">
       </FormField>
       <FormField label="Tanggal surat" :error="errors.tanggal" required><input v-model="form.tanggal" type="date" class="input" required></FormField>
-      <FormField label="Status" :error="errors.status" required><select v-model="form.status" class="select"><option>Draft</option><option>Diterbitkan</option></select></FormField>
+      <FormField label="Status" :error="errors.status" :hint="auth.canDecide ? 'Diterbitkan = dibubuhi tanda tangan, stempel, dan kode QR saat dicetak.' : 'Hanya Ketua RT / Sekretaris yang dapat menerbitkan surat.'" required><select v-model="form.status" class="select" :disabled="!auth.canDecide"><option>Draft</option><option>Diterbitkan</option></select></FormField>
       <FormField label="Tujuan" :error="errors.tujuan" required><input v-model="form.tujuan" class="input" required></FormField>
       <FormField label="Perihal" :error="errors.perihal" required><input v-model="form.perihal" class="input" required></FormField>
       <FormField label="Isi surat" :error="errors.isi" full hint="{{nomor}} dan {{tanggal}} akan terisi otomatis saat dicetak.">

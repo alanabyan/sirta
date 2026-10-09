@@ -177,4 +177,5 @@ h1 { font-size: 28px; margin-bottom: 6px; letter-spacing: -.01em; }
 .done > svg { color: var(--ok); }
 .kode { font-size: 30px; font-weight: 800; letter-spacing: .04em; background: var(--primary-soft); color: var(--primary-strong); padding: 10px 22px; border-radius: 14px; margin: 6px 0; }
 @media (max-width: 560px) { .opts { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { header { padding: 12px 16px; } .brand .muted { display: none; } }
 </style>

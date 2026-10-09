@@ -7,6 +7,7 @@ const AppLayout = () => import('@/layouts/AppLayout.vue')
 const routes = [
   { path: '/masuk', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { guest: true, title: 'Masuk' } },
   { path: '/ajukan', name: 'ajukan', component: () => import('@/views/AjukanView.vue'), meta: { title: 'Ajukan Surat' } },
+  { path: '/cek-surat/:kode?', name: 'cek-surat', component: () => import('@/views/CekSuratView.vue'), meta: { title: 'Periksa Keaslian Surat' } },
   { path: '/lacak/:kode?', name: 'lacak', component: () => import('@/views/PublicTrackingView.vue'), meta: { title: 'Lacak Pengajuan' } },
   {
     path: '/',
@@ -28,7 +29,8 @@ const routes = [
       { path: 'template', name: 'template', component: () => import('@/views/TemplateView.vue'), meta: { title: 'Template Surat', group: 'Surat & Arsip', subtitle: 'Kerangka surat siap pakai' } },
       { path: 'arsip', name: 'arsip', component: () => import('@/views/ArsipView.vue'), meta: { title: 'Arsip Digital', group: 'Surat & Arsip', subtitle: 'Penyimpanan dokumen RT' } },
 
-      { path: 'pengguna', name: 'pengguna', component: () => import('@/views/PenggunaView.vue'), meta: { title: 'Pengguna Sistem', group: 'Pengaturan', subtitle: 'Akun dan hak akses', admin: true } },
+      { path: 'pengguna', name: 'pengguna', component: () => import('@/views/PenggunaView.vue'), meta: { title: 'Pengguna Sistem', group: 'Pengaturan', subtitle: 'Akun dan hak akses', roles: ['administrator'] } },
+      { path: 'pengaturan', name: 'pengaturan', component: () => import('@/views/PengaturanView.vue'), meta: { title: 'Identitas & Tanda Tangan', group: 'Pengaturan', subtitle: 'Kop surat, tanda tangan, dan stempel', roles: ['administrator', 'ketua_rt'] } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -45,7 +47,8 @@ router.beforeEach(async (to) => {
   if (!auth.ready) await auth.restore()
   if (to.meta.auth && !auth.isLoggedIn) return { name: 'login', query: { next: to.fullPath } }
   if (to.meta.guest && auth.isLoggedIn) return { name: 'dashboard' }
-  if (to.matched.some((r) => r.meta.admin) && !auth.isAdmin) return { name: 'dashboard' }
+  const batas = to.matched.map((r) => r.meta.roles).find(Boolean)
+  if (batas && !batas.includes(auth.user?.role)) return { name: 'dashboard' }
 })
 
 router.afterEach((to) => {

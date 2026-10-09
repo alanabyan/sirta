@@ -1,17 +1,19 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Home, Users, UsersRound, Award, FilePlus2, ClipboardCheck, Search, Inbox, Send,
-  FileText, Archive, Settings, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X,
+  FileText, Archive, Settings, PenLine, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X,
 } from 'lucide-vue-next'
 import { useAuth } from '@/stores/auth'
 import { useUi } from '@/stores/ui'
+import { useAntrean } from '@/stores/antrean'
 import { inisial } from '@/utils'
 import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 
 const auth = useAuth()
 const ui = useUi()
+const antrean = useAntrean()
 const route = useRoute()
 const router = useRouter()
 
@@ -21,14 +23,14 @@ const menu = computed(() => [
     title: 'Pelayanan Warga',
     items: [
       { to: '/layanan', label: 'Permohonan Warga', icon: FilePlus2 },
-      { to: '/verifikasi', label: 'Verifikasi', icon: ClipboardCheck },
+      { to: '/verifikasi', label: 'Verifikasi', icon: ClipboardCheck, badge: 'perluVerifikasi' },
       { to: '/tracking', label: 'Lacak Permohonan', icon: Search },
     ],
   },
   {
     title: 'Surat & Arsip',
     items: [
-      { to: '/surat-masuk', label: 'Surat Masuk', icon: Inbox },
+      { to: '/surat-masuk', label: 'Surat Masuk', icon: Inbox, badge: 'suratBaru' },
       { to: '/surat-keluar', label: 'Surat Keluar', icon: Send },
       { to: '/template', label: 'Template Surat', icon: FileText },
       { to: '/arsip', label: 'Arsip Digital', icon: Archive },
@@ -42,8 +44,22 @@ const menu = computed(() => [
       { to: '/pengurus', label: 'Pengurus RT', icon: Award },
     ],
   },
-  ...(auth.isAdmin ? [{ title: 'Pengaturan', items: [{ to: '/pengguna', label: 'Pengguna Sistem', icon: Settings }] }] : []),
+  ...(auth.canSetting
+    ? [{
+        title: 'Pengaturan',
+        items: [
+          { to: '/pengaturan', label: 'Identitas & Tanda Tangan', icon: PenLine },
+          ...(auth.isAdmin ? [{ to: '/pengguna', label: 'Pengguna Sistem', icon: Settings }] : []),
+        ],
+      }]
+    : []),
 ])
+
+const hitung = (m) => (m.badge ? antrean[m.badge] : 0)
+const hitungGrup = (g) => g.items.reduce((n, m) => n + hitung(m), 0)
+
+onMounted(() => antrean.start())
+onUnmounted(() => antrean.stop())
 
 const isActive = (to) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
 
@@ -90,12 +106,14 @@ async function logout() {
         <div v-for="(g, i) in menu" :key="i" class="group">
           <button v-if="g.title" class="group-title" :aria-expanded="isOpen(g)" @click="toggle(g)">
             <span>{{ g.title }}</span>
+            <span v-if="!isOpen(g) && hitungGrup(g)" class="dot-badge" :title="`${hitungGrup(g)} perlu perhatian`">{{ hitungGrup(g) }}</span>
             <ChevronDown :size="14" class="chev" :class="{ open: isOpen(g) }" />
           </button>
           <div v-show="!g.title || isOpen(g)" class="group-items">
             <RouterLink v-for="m in g.items" :key="m.to" :to="m.to" class="nav-item" :class="{ active: isActive(m.to) }">
               <component :is="m.icon" :size="18" />
-              <span>{{ m.label }}</span>
+              <span class="grow">{{ m.label }}</span>
+              <span v-if="hitung(m)" class="nav-badge">{{ hitung(m) }}</span>
             </RouterLink>
           </div>
         </div>
@@ -122,10 +140,10 @@ async function logout() {
 
         <div class="user-wrap">
           <button class="user" :aria-expanded="userMenu" @click="userMenu = !userMenu">
-            <span class="avatar">{{ inisial(auth.user.name) }}</span>
+            <span class="avatar">{{ inisial(auth.user?.name) }}</span>
             <span class="who">
-              <b>{{ auth.user.name }}</b>
-              <small>{{ auth.user.role_label }}</small>
+              <b>{{ auth.user?.name }}</b>
+              <small>{{ auth.user?.role_label }}</small>
             </span>
             <ChevronDown :size="16" class="muted" />
           </button>
@@ -164,6 +182,8 @@ async function logout() {
 .group-items { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
 .group-title { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 0; background: transparent; font-size: 11px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; border-radius: 8px; }
 .group-title:hover { background: var(--surface-2); color: var(--text); }
+.dot-badge { margin-left: auto; margin-right: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; letter-spacing: 0; }
+.nav-badge { min-width: 22px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 11.5px; font-weight: 700; display: grid; place-items: center; }
 .chev { transition: transform .2s; transform: rotate(-90deg); }
 .chev.open { transform: none; }
 .nav-item {

@@ -83,14 +83,14 @@ const hapus = (u) => list.remove(u, { title: `Hapus akun ${u.name}?`, message: '
         <thead><tr><th>Pengguna</th><th>Username</th><th>Peran</th><th>Status</th><th>Masuk terakhir</th><th /></tr></thead>
         <tbody>
           <tr v-for="u in list.items.value" :key="u.id">
-            <td><div class="row"><span class="avatar">{{ inisial(u.name) }}</span><b>{{ u.name }}</b><span v-if="u.id === auth.user.id" class="badge plain tone-primary">Anda</span></div></td>
+            <td><div class="row"><span class="avatar">{{ inisial(u.name) }}</span><b>{{ u.name }}</b><span v-if="u.id === auth.user?.id" class="badge plain tone-primary">Anda</span></div></td>
             <td class="mono">{{ u.username }}</td>
             <td>{{ u.role_label }}</td>
             <td><StatusBadge :status="u.is_active ? 'Aktif' : 'Nonaktif'" /></td>
             <td class="muted">{{ u.last_login_at ? waktuRelatif(u.last_login_at) : 'Belum pernah' }}</td>
             <td class="actions">
               <button class="btn btn-icon" title="Ubah" :aria-label="`Ubah ${u.name}`" @click="buka(u)"><Pencil :size="17" /></button>
-              <button v-if="u.id !== auth.user.id" class="btn btn-icon" title="Hapus" :aria-label="`Hapus ${u.name}`" @click="hapus(u)"><Trash2 :size="17" /></button>
+              <button v-if="u.id !== auth.user?.id" class="btn btn-icon" title="Hapus" :aria-label="`Hapus ${u.name}`" @click="hapus(u)"><Trash2 :size="17" /></button>
             </td>
           </tr>
         </tbody>
@@ -129,9 +129,9 @@ const hapus = (u) => list.remove(u, { title: `Hapus akun ${u.name}?`, message: '
         <input v-model="form.password" type="password" class="input" autocomplete="new-password" minlength="8" :required="!form.id">
       </FormField>
       <FormField label="Peran" :error="errors.role" required>
-        <select v-model="form.role" class="select" :disabled="form.id === auth.user.id"><option v-for="r in ROLES" :key="r[0]" :value="r[0]">{{ r[1] }}</option></select>
+        <select v-model="form.role" class="select" :disabled="form.id === auth.user?.id"><option v-for="r in ROLES" :key="r[0]" :value="r[0]">{{ r[1] }}</option></select>
       </FormField>
-      <label class="full switch"><input v-model="form.is_active" type="checkbox" :disabled="form.id === auth.user.id"> Akun aktif (dapat masuk ke sistem)</label>
+      <label class="full switch"><input v-model="form.is_active" type="checkbox" :disabled="form.id === auth.user?.id"> Akun aktif (dapat masuk ke sistem)</label>
     </div>
     <div class="callout tone-info" style="margin-top:14px"><Info :size="18" /><span>{{ ROLES.find((r) => r[0] === form.role)?.[2] }}</span></div>
   </BaseModal>

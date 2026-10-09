@@ -13,6 +13,7 @@ import FormField from '@/components/FormField.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import PengajuanDetailModal from '@/components/PengajuanDetailModal.vue'
 
 const LAYANAN = ['Surat Pengantar', 'Surat Domisili', 'Surat Keterangan', 'Surat Keterangan Usaha', 'Surat Pengantar Nikah']
@@ -34,6 +35,10 @@ function buka() {
   showForm.value = true
 }
 async function simpan() {
+  if (!form.warga_id) {
+    errors.value = { warga_id: 'Pilih warga pemohon.' }
+    return
+  }
   const hasil = await save(null, { ...form })
   if (hasil) {
     showForm.value = false
@@ -89,11 +94,8 @@ onMounted(async () => {
 
   <BaseModal v-if="showForm" title="Permohonan baru" subtitle="Setelah disimpan, permohonan masuk antrean verifikasi." size="sm" :saving="saving" save-text="Ajukan" @close="showForm = false" @save="simpan">
     <div class="stack">
-      <FormField label="Pemohon" :error="errors.warga_id" hint="Belum terdaftar? Tambahkan dulu di menu Data Warga." required>
-        <select v-model="form.warga_id" class="select" required>
-          <option value="" disabled>— Pilih warga —</option>
-          <option v-for="w in wargaOpsi" :key="w.id" :value="w.id">{{ w.nama }}</option>
-        </select>
+      <FormField label="Pemohon" :error="errors.warga_id" hint="Belum terdaftar? Tambahkan dulu di menu Data Warga.">
+        <SearchSelect v-model="form.warga_id" :options="wargaOpsi.map((w) => ({ value: w.id, label: w.nama, sub: w.keluarga?.alamat }))" placeholder="— Pilih warga —" search-placeholder="Ketik nama warga…" :invalid="!!errors.warga_id" />
       </FormField>
       <FormField label="Jenis layanan" :error="errors.layanan" required><select v-model="form.layanan" class="select"><option v-for="l in LAYANAN" :key="l">{{ l }}</option></select></FormField>
       <FormField label="Keperluan" :error="errors.keperluan" hint="Jelaskan untuk apa surat ini dibutuhkan."><textarea v-model="form.keperluan" class="textarea" placeholder="mis. Persyaratan pendaftaran sekolah anak" /></FormField>

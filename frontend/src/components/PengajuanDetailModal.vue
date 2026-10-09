@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Check, X, FileCheck2, Send, Paperclip, Eye, Download, FileText, Image } from 'lucide-vue-next'
 import api, { errorMessage } from '@/api'
 import { useAuth } from '@/stores/auth'
 import { useUi } from '@/stores/ui'
+import { useAntrean } from '@/stores/antrean'
 import { formatTanggal, formatUkuran } from '@/utils'
 import BaseModal from './BaseModal.vue'
 import TrackingTimeline from './TrackingTimeline.vue'
@@ -14,6 +15,7 @@ const emit = defineEmits(['close', 'changed'])
 
 const auth = useAuth()
 const ui = useUi()
+const antrean = useAntrean()
 const router = useRouter()
 const p = ref(null)
 const loading = ref(true)
@@ -42,6 +44,7 @@ async function ubah(status, note) {
     alasan.value = catatan.value = ''
     await load()
     emit('changed')
+    antrean.refresh()
   } catch (e) {
     ui.error(errorMessage(e))
   } finally {
@@ -49,7 +52,17 @@ async function ubah(status, note) {
   }
 }
 
+const alasanEl = ref(null)
+async function mulaiTolak() {
+  menolak.value = true
+  await nextTick()
+  alasanEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  alasanEl.value?.focus()
+}
+
 const bisaPutuskan = computed(() => auth.canDecide && p.value && ['Menunggu Verifikasi', 'Diproses'].includes(p.value.status))
+const bisaBuatSurat = computed(() => auth.canWrite && p.value?.status === 'Selesai')
+const adaFooter = computed(() => !!p.value && (bisaPutuskan.value || bisaBuatSurat.value))
 
 // Lampiran bersifat privat: diambil lewat API ber-login sebagai blob, tidak lewat tautan langsung.
 const pratinjau = ref(null) // { nama, mime, url }
@@ -89,7 +102,7 @@ onMounted(load)
 </script>
 
 <template>
-  <BaseModal :title="p ? `Permohonan ${p.kode}` : 'Memuat…'" size="lg" hide-footer @close="emit('close')">
+  <BaseModal :title="p ? `Permohonan ${p.kode}` : 'Memuat…'" size="lg" :hide-footer="!adaFooter" @close="emit('close')">
     <div v-if="loading" class="loading"><div class="spinner" /></div>
     <div v-else-if="p" class="stack" style="gap:20px">
       <dl class="kv card card-pad" style="box-shadow:none;background:var(--surface-2)">
@@ -117,43 +130,34 @@ onMounted(load)
 
       <TrackingTimeline :data="{ ...p, riwayat: p.riwayat.map((r) => ({ ...r, catatan: r.catatan ? r.catatan + (r.user ? ` — ${r.user.name}` : '') : (r.user ? `oleh ${r.user.name}` : '') })) }" />
 
-      <!-- Tindakan -->
-      <div v-if="bisaPutuskan" class="actions-box">
-        <template v-if="!menolak">
-          <div v-if="p.status === 'Menunggu Verifikasi'">
-            <h4>Periksa lalu putuskan</h4>
-            <p class="muted small">Pastikan data pemohon benar dan keperluannya jelas sebelum menyetujui.</p>
-            <div class="row row-wrap" style="margin-top:12px">
-              <button class="btn btn-primary" :disabled="busy" @click="ubah('Diproses')"><Check :size="17" /> Setujui &amp; proses</button>
-              <button class="btn btn-danger" :disabled="busy" @click="menolak = true"><X :size="17" /> Tolak…</button>
-            </div>
-          </div>
-          <div v-else>
-            <h4>Sedang diproses</h4>
-            <p class="muted small">Siapkan suratnya, lalu tandai selesai agar warga tahu surat sudah bisa diambil.</p>
-            <div class="row row-wrap" style="margin-top:12px">
-              <button class="btn btn-secondary" @click="buatSurat"><Send :size="16" /> Buat surat</button>
-              <button class="btn btn-primary" :disabled="busy" @click="ubah('Selesai', 'Surat dapat diambil di sekretariat RT.')"><FileCheck2 :size="17" /> Tandai selesai</button>
-              <button class="btn btn-danger" :disabled="busy" @click="menolak = true"><X :size="17" /> Batalkan…</button>
-            </div>
-          </div>
-        </template>
-        <form v-else @submit.prevent="ubah('Ditolak', alasan)">
-          <h4>Alasan penolakan</h4>
-          <p class="muted small">Alasan ini akan terlihat oleh warga saat melacak permohonannya.</p>
-          <textarea v-model="alasan" class="textarea" style="margin-top:10px;min-height:80px" placeholder="mis. Fotokopi KK belum dilampirkan" required autofocus />
-          <div class="row" style="margin-top:12px">
-            <button type="submit" class="btn btn-solid-danger" :disabled="busy || !alasan.trim()">Tolak permohonan</button>
-            <button type="button" class="btn btn-secondary" @click="menolak = false">Kembali</button>
-          </div>
-        </form>
-      </div>
-      <div v-else-if="p.status === 'Selesai' && auth.canWrite" class="actions-box">
-        <h4>Permohonan selesai</h4>
-        <p class="muted small">Belum membuat suratnya? Buat dari template dengan data pemohon terisi otomatis.</p>
-        <button class="btn btn-secondary" style="margin-top:12px" @click="buatSurat"><Send :size="16" /> Buat surat keluar</button>
+      <div v-if="menolak" class="tolak">
+        <h4>Alasan penolakan</h4>
+        <p class="muted small">Alasan ini akan terlihat oleh warga saat melacak permohonannya.</p>
+        <textarea ref="alasanEl" v-model="alasan" class="textarea" style="margin-top:10px;min-height:80px" placeholder="mis. Fotokopi KK belum dilampirkan" />
       </div>
     </div>
+
+    <template #footer>
+      <template v-if="menolak">
+        <button type="button" class="btn btn-secondary" @click="menolak = false">Kembali</button>
+        <button type="button" class="btn btn-solid-danger" :disabled="busy || !alasan.trim()" @click="ubah('Ditolak', alasan)">Tolak permohonan</button>
+      </template>
+      <template v-else-if="bisaPutuskan && p.status === 'Menunggu Verifikasi'">
+        <span class="hint grow">Periksa data dan lampiran sebelum menyetujui.</span>
+        <button type="button" class="btn btn-danger" :disabled="busy" @click="mulaiTolak"><X :size="17" /> Tolak…</button>
+        <button type="button" class="btn btn-primary" :disabled="busy" @click="ubah('Diproses')"><Check :size="17" /> Setujui &amp; proses</button>
+      </template>
+      <template v-else-if="bisaPutuskan">
+        <span class="hint grow">Siapkan surat, lalu tandai selesai agar warga tahu.</span>
+        <button type="button" class="btn btn-danger" :disabled="busy" @click="mulaiTolak"><X :size="17" /> Batalkan…</button>
+        <button type="button" class="btn btn-secondary" @click="buatSurat"><Send :size="16" /> Buat surat</button>
+        <button type="button" class="btn btn-primary" :disabled="busy" @click="ubah('Selesai', 'Surat dapat diambil di sekretariat RT.')"><FileCheck2 :size="17" /> Tandai selesai</button>
+      </template>
+      <template v-else-if="bisaBuatSurat">
+        <span class="hint grow">Permohonan selesai. Surat belum dibuat?</span>
+        <button type="button" class="btn btn-primary" @click="buatSurat"><Send :size="16" /> Buat surat keluar</button>
+      </template>
+    </template>
   </BaseModal>
 
   <BaseModal v-if="pratinjau" :title="pratinjau.nama" size="lg" hide-footer @close="tutupPratinjau">
@@ -163,8 +167,10 @@ onMounted(load)
 </template>
 
 <style scoped>
-.actions-box { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: var(--surface); }
-.actions-box h4 { font-size: 14.5px; }
+.tolak { border: 1px solid var(--bad); border-radius: 14px; padding: 16px 18px; background: var(--bad-soft); }
+.tolak h4 { font-size: 14.5px; }
+.hint { color: var(--muted); font-size: 13px; align-self: center; }
+@media (max-width: 640px) { .hint { display: none; } }
 .lamp { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
 .lamp h4 { font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .lamp ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }

@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\AjukanController;
 use App\Http\Controllers\Api\ArsipController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CekSuratController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\KeluargaController;
 use App\Http\Controllers\Api\PengajuanController;
+use App\Http\Controllers\Api\PengaturanController;
 use App\Http\Controllers\Api\PengurusController;
 use App\Http\Controllers\Api\SuratKeluarController;
 use App\Http\Controllers\Api\SuratMasukController;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 // Publik
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/ajukan', AjukanController::class)->middleware('throttle:5,1');
+Route::get('/cek-surat/{kode}', CekSuratController::class)->middleware('throttle:20,1');
 Route::post('/tracking', TrackingController::class)->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -27,6 +30,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Semua peran dapat melihat data.
     Route::get('/dashboard', DashboardController::class);
+    Route::get('/antrean', [DashboardController::class, 'antrean']);
+    Route::get('/pengaturan', [PengaturanController::class, 'show']);
     Route::get('/warga/ringkasan', [WargaController::class, 'ringkasan']);
     Route::get('/arsip/ringkasan', [ArsipController::class, 'ringkasan']);
     Route::get('/arsip/{id}/unduh', [ArsipController::class, 'unduh'])->whereNumber('id');
@@ -50,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Mengubah data: bendahara hanya dapat melihat.
     Route::middleware('role:administrator,ketua_rt,sekretaris,operator')->group(function () {
+        Route::get('/pengaturan/gambar/{jenis}', [PengaturanController::class, 'gambar']);
         Route::get('warga/{id}/nik', [WargaController::class, 'nik'])->whereNumber('id');
         Route::post('warga', [WargaController::class, 'store']);
         Route::put('warga/{id}', [WargaController::class, 'update']);
@@ -81,6 +87,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('template-surat/{id}', [TemplateSuratController::class, 'update']);
         Route::delete('template-surat/{id}', [TemplateSuratController::class, 'destroy']);
     });
+
+    // Identitas RT, tanda tangan & stempel: Ketua RT dan Administrator.
+    Route::post('/pengaturan', [PengaturanController::class, 'update'])->middleware('role:administrator,ketua_rt');
 
     // Manajemen pengguna: administrator saja.
     Route::middleware('role:administrator')->group(function () {

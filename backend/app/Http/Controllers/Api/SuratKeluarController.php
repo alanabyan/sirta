@@ -35,6 +35,11 @@ class SuratKeluarController extends CrudController
 
     protected function beforeSave(array $data, ?Model $record): array
     {
+        $berhak = in_array(auth()->user()?->role, ['administrator', 'ketua_rt', 'sekretaris'], true);
+        if (! $berhak && ($data['status'] === 'Diterbitkan' || $record?->status === 'Diterbitkan')) {
+            abort(403, 'Hanya Ketua RT, Sekretaris, atau Administrator yang dapat menerbitkan atau mengubah surat yang sudah terbit.');
+        }
+
         if (empty($data['nomor'])) {
             $data['nomor'] = $record?->nomor ?? $this->nomorBerikutnya($data['tanggal']);
         }

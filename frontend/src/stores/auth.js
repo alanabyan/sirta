@@ -8,6 +8,8 @@ export const useAuth = defineStore('auth', {
     isAdmin: (s) => s.user?.role === 'administrator',
     /** Tambah/ubah data: semua peran kecuali Bendahara (hanya lihat). */
     canWrite: (s) => !!s.user && s.user.role !== 'bendahara',
+    /** Identitas RT, tanda tangan & stempel. */
+    canSetting: (s) => ['administrator', 'ketua_rt'].includes(s.user?.role),
     /** Verifikasi, hapus data, kelola pengurus & template. */
     canDecide: (s) => ['administrator', 'ketua_rt', 'sekretaris'].includes(s.user?.role),
   },
