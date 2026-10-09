@@ -1,5 +1,5 @@
 <script setup>
-// Hanya dimuat saat `npm run dev` (lihat LoginView.vue); tidak ikut ke build produksi.
+// Hanya dimuat saat `npm run dev` atau build dengan VITE_AKUN_CONTOH=true (lihat LoginView.vue).
 const emit = defineEmits(['pilih'])
 const akun = [
   ['Administrator', 'admin'],
@@ -12,7 +12,7 @@ const akun = [
 
 <template>
   <div class="demo">
-    <b>Akun contoh (hanya mode pengembangan)</b> — kata sandi semua akun: <code>password</code>
+    <b>Akun contoh (masa uji coba)</b> — kata sandi semua akun: <code>password</code>
     <div class="row row-wrap" style="margin-top:8px">
       <button v-for="a in akun" :key="a[1]" type="button" class="chip" @click="emit('pilih', a[1])">{{ a[0] }}</button>
     </div>

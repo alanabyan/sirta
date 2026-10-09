@@ -31,8 +31,10 @@ async function submit() {
   }
 }
 
-// Kotak akun contoh hanya dimuat saat `npm run dev`; Vite membuang cabang ini dari build produksi.
-const DemoAkun = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DemoAkun.vue')) : null
+// Kotak akun contoh dimuat saat `npm run dev`, atau bila build dibuat dengan VITE_AKUN_CONTOH=true
+// (diatur di .github/workflows/deploy.yml). Bila tidak, Vite membuang komponennya dari hasil build.
+const tampilkanDemo = import.meta.env.DEV || import.meta.env.VITE_AKUN_CONTOH === 'true'
+const DemoAkun = tampilkanDemo ? defineAsyncComponent(() => import('@/components/DemoAkun.vue')) : null
 </script>
 
 <template>

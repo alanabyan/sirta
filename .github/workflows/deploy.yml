@@ -34,6 +34,12 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
+        env:
+          # Kotak "Akun contoh" di halaman login. Menyala selama masa uji coba.
+          # Untuk mematikan SEBELUM dipakai warga sungguhan, tanpa mengubah kode:
+          #   GitHub → Settings → Secrets and variables → Actions → tab Variables → New variable
+          #   Name: AKUN_CONTOH   Value: false    (lalu jalankan ulang deploy)
+          VITE_AKUN_CONTOH: ${{ vars.AKUN_CONTOH || 'true' }}
         run: |
           npm ci
           npm run build
