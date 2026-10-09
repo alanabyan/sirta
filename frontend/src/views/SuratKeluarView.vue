@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Plus, Search, Pencil, Trash2, Send, Printer, Wand2 } from 'lucide-vue-next'
 import api, { errorMessage } from '@/api'
@@ -35,6 +35,10 @@ const form = reactive(kosong())
 const showForm = ref(false)
 
 /** Isi surat otomatis dari template + data warga; tetap dapat disunting manual. */
+// Isian yang belum terisi ({{nama}}, {{nik}}, …). {{nomor}}/{{tanggal}}/{{ttd}} diisi otomatis saat cetak.
+const isianKosong = (isi) => [...new Set([...(isi || '').matchAll(/\{\{(?!nomor\}\}|tanggal\}\}|ttd\}\})(\w+)\}\}/g)].map((m) => `{{${m[1]}}}`))]
+const kosongDiForm = computed(() => isianKosong(form.isi))
+
 const nikCache = {}
 async function nikWarga(id) {
   if (!id) return undefined
@@ -76,6 +80,8 @@ async function simpan() {
 
 async function cetak(s) {
   if (!s.isi) return ui.error('Surat ini belum memiliki isi. Ubah surat dan pilih template terlebih dahulu.')
+  const sisa = isianKosong(s.isi)
+  if (sisa.length) ui.error(`Perhatian: surat ini masih memuat isian kosong (${sisa.join(', ')}). Ubah surat lalu pilih warga atau isi manual.`)
   const hasil = await cetakSurat(s)
   if (hasil.ok) return
   ui.error({
@@ -171,6 +177,9 @@ onMounted(async () => {
       <FormField label="Status" :error="errors.status" :hint="auth.canDecide ? 'Diterbitkan = dibubuhi tanda tangan, stempel, dan kode QR saat dicetak.' : 'Hanya Ketua RT / Sekretaris yang dapat menerbitkan surat.'" required><select v-model="form.status" class="select" :disabled="!auth.canDecide"><option>Draft</option><option>Diterbitkan</option></select></FormField>
       <FormField label="Tujuan" :error="errors.tujuan" required><input v-model="form.tujuan" class="input" required></FormField>
       <FormField label="Perihal" :error="errors.perihal" required><input v-model="form.perihal" class="input" required></FormField>
+      <div v-if="kosongDiForm.length" class="full callout tone-warn" role="alert">
+        <span><b>Masih ada isian kosong:</b> {{ kosongDiForm.join(', ') }}. Pilih warga di atas atau ketik langsung pada isi surat. Surat dengan isian kosong tidak dapat diterbitkan.</span>
+      </div>
       <FormField label="Isi surat" :error="errors.isi" full hint="{{nomor}} dan {{tanggal}} akan terisi otomatis saat dicetak.">
         <textarea v-model="form.isi" class="textarea" style="min-height:240px;font-family:ui-monospace,Consolas,monospace;font-size:13px" />
       </FormField>

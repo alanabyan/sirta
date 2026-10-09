@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { Upload, Trash2, PenLine, ImageOff } from 'lucide-vue-next'
+import { Upload, Trash2, PenLine, ImageOff, Eraser } from 'lucide-vue-next'
 
 defineProps({
   label: String,
@@ -8,7 +8,7 @@ defineProps({
   src: String, // URL pratinjau (gambar tersimpan atau pilihan baru)
   bisaGambar: Boolean,
 })
-const emit = defineEmits(['pilih', 'hapus', 'gambar'])
+const emit = defineEmits(['pilih', 'hapus', 'gambar', 'bersihkan'])
 const input = ref(null)
 const drag = ref(false)
 
@@ -31,6 +31,7 @@ function pilih(f) {
         <input ref="input" type="file" class="sr-only" accept=".png,.jpg,.jpeg,image/png,image/jpeg" @change="pilih($event.target.files[0])">
       </label>
       <button v-if="bisaGambar" type="button" class="btn btn-soft btn-sm" @click="emit('gambar')"><PenLine :size="15" /> Gambar langsung</button>
+      <button v-if="src" type="button" class="btn btn-soft btn-sm" title="Buang latar foto sehingga hanya tinta yang tersisa" @click="emit('bersihkan')"><Eraser :size="15" /> Bersihkan latar</button>
       <button v-if="src" type="button" class="btn btn-danger btn-sm" @click="emit('hapus')"><Trash2 :size="15" /> Hapus</button>
     </div>
   </div>

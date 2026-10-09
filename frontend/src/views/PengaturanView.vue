@@ -9,6 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import FormField from '@/components/FormField.vue'
 import GambarSlot from '@/components/GambarSlot.vue'
 import TandaTanganPad from '@/components/TandaTanganPad.vue'
+import BersihkanLatarModal from '@/components/BersihkanLatarModal.vue'
 
 const ui = useUi()
 const loading = ref(true)
@@ -19,6 +20,7 @@ const files = reactive({ tanda_tangan: null, stempel: null })
 const hapus = reactive({ tanda_tangan: false, stempel: false })
 const preview = reactive({ tanda_tangan: '', stempel: '' }) // blob URL
 const showPad = ref(false)
+const bersihkan = ref(null) // 'tanda_tangan' | 'stempel'
 
 const lepas = (k) => preview[k] && URL.revokeObjectURL(preview[k])
 
@@ -46,6 +48,11 @@ function pilih(k, file) {
   files[k] = file
   hapus[k] = false
   preview[k] = URL.createObjectURL(file)
+}
+function hasilBersih(file) {
+  const k = bersihkan.value
+  bersihkan.value = null
+  pilih(k, file)
 }
 function buang(k) {
   lepas(k)
@@ -115,8 +122,8 @@ onUnmounted(() => ['tanda_tangan', 'stempel'].forEach(lepas))
       <section class="card">
         <div class="card-head"><div><h3>Tanda tangan & stempel</h3><p>Gambar PNG/JPG, maksimal 1 MB. PNG berlatar transparan hasilnya paling rapi.</p></div></div>
         <div class="card-body form-grid">
-          <GambarSlot label="Tanda tangan" hint="Foto tanda tangan di kertas putih, atau gambar langsung." :src="preview.tanda_tangan" bisa-gambar @pilih="pilih('tanda_tangan', $event)" @hapus="buang('tanda_tangan')" @gambar="showPad = true" />
-          <GambarSlot label="Stempel RT" hint="Foto stempel di kertas putih (bagian putih otomatis menyatu)." :src="preview.stempel" @pilih="pilih('stempel', $event)" @hapus="buang('stempel')" />
+          <GambarSlot label="Tanda tangan" hint="Foto tanda tangan di kertas putih, atau gambar langsung." :src="preview.tanda_tangan" bisa-gambar @pilih="pilih('tanda_tangan', $event)" @hapus="buang('tanda_tangan')" @gambar="showPad = true" @bersihkan="bersihkan = 'tanda_tangan'" />
+          <GambarSlot label="Stempel RT" hint="Foto stempel di kertas putih (bagian putih otomatis menyatu)." :src="preview.stempel" @pilih="pilih('stempel', $event)" @hapus="buang('stempel')" @bersihkan="bersihkan = 'stempel'" />
           <p v-if="errors.tanda_tangan || errors.stempel" class="err full" style="color:var(--bad);font-size:12.5px">{{ errors.tanda_tangan || errors.stempel }}</p>
         </div>
         <div class="card-body" style="padding-top:0">
@@ -156,6 +163,7 @@ onUnmounted(() => ['tanda_tangan', 'stempel'].forEach(lepas))
     </aside>
   </div>
 
+  <BersihkanLatarModal v-if="bersihkan" :src="preview[bersihkan]" :label="bersihkan === 'stempel' ? 'Stempel' : 'Tanda tangan'" @close="bersihkan = null" @selesai="hasilBersih" />
   <TandaTanganPad v-if="showPad" @close="showPad = false" @selesai="dariPad" />
 </template>
 

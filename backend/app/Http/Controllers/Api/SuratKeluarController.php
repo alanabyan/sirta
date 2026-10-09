@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\SuratKeluar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SuratKeluarController extends CrudController
 {
@@ -38,6 +39,12 @@ class SuratKeluarController extends CrudController
         $berhak = in_array(auth()->user()?->role, ['administrator', 'ketua_rt', 'sekretaris'], true);
         if (! $berhak && ($data['status'] === 'Diterbitkan' || $record?->status === 'Diterbitkan')) {
             abort(403, 'Hanya Ketua RT, Sekretaris, atau Administrator yang dapat menerbitkan atau mengubah surat yang sudah terbit.');
+        }
+
+        // {{nomor}}, {{tanggal}}, dan {{ttd}} terisi saat cetak; sisanya harus sudah diisi sebelum terbit.
+        if ($data['status'] === 'Diterbitkan' && preg_match_all('/\{\{(?!nomor\}\}|tanggal\}\}|ttd\}\})(\w+)\}\}/', $data['isi'] ?? '', $m)) {
+            $sisa = implode(', ', array_map(fn ($k) => "{{{$k}}}", array_unique($m[1])));
+            throw ValidationException::withMessages(['isi' => "Surat belum bisa diterbitkan: masih ada isian kosong ($sisa). Pilih warga atau isi manual."]);
         }
 
         if (empty($data['nomor'])) {

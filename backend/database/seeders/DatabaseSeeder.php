@@ -145,14 +145,20 @@ Desa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi",
         }
 
         foreach ([
-            ['SK-041/RT03/X/2026', 0, 'Desa Sukajaya', 'Pengantar Administrasi Warga', 'SK-PENGANTAR'],
-            ['SK-040/RT03/X/2026', 2, 'Kecamatan Cibitung', 'Laporan Kegiatan RT', 'SK-KET'],
-            ['SK-039/RT03/IX/2026', 9, 'Warga RT 03', 'Undangan Kerja Bakti', 'SK-UND'],
-        ] as [$no, $ago, $tujuan, $hal, $t]) {
+            ['SK-041/RT03/X/2026', 0, 'Desa Sukajaya', 'Pengantar Administrasi Warga', 'SK-PENGANTAR',
+                ['nama' => 'Ahmad Fauzan', 'nik' => '3275011201950001', 'alamat' => 'Blok C1 No. 12, Perum Griya Kreasi Aqilla', 'keperluan' => 'pembuatan KTP-el baru']],
+            ['SK-040/RT03/X/2026', 2, 'Kecamatan Cibitung', 'Laporan Kegiatan RT', 'SK-KET',
+                ['nama' => 'Budi Santoso', 'nik' => '3275012206870003', 'alamat' => 'Blok C2 No. 08, Perum Griya Kreasi Aqilla', 'keperluan' => 'pendataan warga oleh kecamatan']],
+            ['SK-039/RT03/IX/2026', 9, 'Warga RT 03', 'Undangan Kerja Bakti', 'SK-UND',
+                ['keperluan' => 'kerja bakti membersihkan saluran air, Minggu pukul 07.00 di depan pos ronda']],
+        ] as [$no, $ago, $tujuan, $hal, $t, $isian]) {
+            $isi = TemplateSurat::find($tpl[$t])->isi;
+            foreach ($isian as $k => $v) {
+                $isi = str_replace('{{'.$k.'}}', $v, $isi);
+            }
             SuratKeluar::create([
                 'nomor' => $no, 'tanggal' => now()->subDays($ago), 'tujuan' => $tujuan, 'perihal' => $hal,
-                'status' => 'Diterbitkan', 'template_surat_id' => $tpl[$t],
-                'isi' => TemplateSurat::find($tpl[$t])->isi,
+                'status' => 'Diterbitkan', 'template_surat_id' => $tpl[$t], 'isi' => $isi,
             ]);
         }
     }
