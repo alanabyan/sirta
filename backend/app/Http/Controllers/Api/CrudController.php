@@ -84,7 +84,7 @@ abstract class CrudController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $data = $request->validate($this->rules(null));
+        $data = $request->validate($this->rules(null), $this->messages());
         $record = ($this->model)::create($this->beforeSave($data, null));
         Aktivitas::catat("Menambahkan {$this->label} “{$this->title($record)}”", 'plus');
 
@@ -94,7 +94,7 @@ abstract class CrudController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $record = $this->find($id);
-        $data = $request->validate($this->rules($record));
+        $data = $request->validate($this->rules($record), $this->messages());
         $record->update($this->beforeSave($data, $record));
         Aktivitas::catat("Memperbarui {$this->label} “{$this->title($record)}”", 'edit');
 
@@ -115,6 +115,11 @@ abstract class CrudController extends Controller
     protected function find(int $id): Model
     {
         return ($this->model)::query()->with($this->with)->withCount($this->withCount)->findOrFail($id);
+    }
+
+    protected function messages(): array
+    {
+        return [];
     }
 
     protected function beforeSave(array $data, ?Model $record): array

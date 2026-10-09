@@ -113,7 +113,7 @@ const hapus = (u) => list.remove(u, { title: `Hapus akun ${u.name}?`, message: '
             <td>{{ formatWaktu(l.created_at) }}</td>
             <td><b>{{ l.user?.name || '(dihapus)' }}</b><div class="cell-sub">{{ l.user?.role_label }}</div></td>
             <td>{{ l.warga?.nama }}</td>
-            <td><span class="badge plain tone-neutral">{{ l.keperluan === 'ubah' ? 'Mengubah data warga' : 'Menyusun surat' }}</span></td>
+            <td><span class="badge plain tone-neutral">{{ { ubah: 'Mengubah data warga', surat: 'Menyusun surat', ekspor: 'Ekspor laporan warga' }[l.keperluan] || l.keperluan }}</span></td>
           </tr>
         </tbody>
       </table>

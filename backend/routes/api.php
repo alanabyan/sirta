@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CekSuratController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\KeluargaController;
+use App\Http\Controllers\Api\LaporanController;
+use App\Http\Controllers\Api\MutasiController;
 use App\Http\Controllers\Api\PengajuanController;
 use App\Http\Controllers\Api\PengaturanController;
 use App\Http\Controllers\Api\PengurusController;
@@ -74,6 +76,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Verifikasi, penghapusan, struktur pengurus, & template: pengambil keputusan.
     Route::middleware('role:administrator,ketua_rt,sekretaris')->group(function () {
+        Route::get('mutasi', [MutasiController::class, 'index']);
+        Route::get('mutasi/ringkasan', [MutasiController::class, 'ringkasan']);
+        Route::post('mutasi', [MutasiController::class, 'store']);
+        Route::post('mutasi/{id}/batal', [MutasiController::class, 'batal'])->whereNumber('id');
+        Route::get('laporan/warga', [LaporanController::class, 'warga']);
+        Route::get('laporan/keluarga', [LaporanController::class, 'keluarga']);
+        Route::get('laporan/bulanan', [LaporanController::class, 'bulanan']);
         Route::patch('pengajuan/{id}/status', [PengajuanController::class, 'ubahStatus']);
         foreach (['warga' => WargaController::class, 'keluarga' => KeluargaController::class,
             'surat-masuk' => SuratMasukController::class, 'surat-keluar' => SuratKeluarController::class,

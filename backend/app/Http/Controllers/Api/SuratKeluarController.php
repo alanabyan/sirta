@@ -17,7 +17,7 @@ class SuratKeluarController extends CrudController
 
     protected array $filters = ['status'];
 
-    protected array $with = ['template:id,nama'];
+    protected array $with = ['template:id,nama', 'pengajuan:id,kode'];
 
     protected string $orderBy = 'tanggal';
 
@@ -31,7 +31,13 @@ class SuratKeluarController extends CrudController
             'isi' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['Draft', 'Diterbitkan'])],
             'template_surat_id' => ['nullable', 'exists:template_surats,id'],
+            'pengajuan_id' => ['nullable', 'exists:pengajuans,id', Rule::unique('surat_keluars', 'pengajuan_id')->ignore($record?->id)],
         ];
+    }
+
+    protected function messages(): array
+    {
+        return ['pengajuan_id.unique' => 'Permohonan ini sudah dibuatkan surat. Buka surat yang ada atau hapus dulu bila ingin membuat ulang.'];
     }
 
     protected function beforeSave(array $data, ?Model $record): array

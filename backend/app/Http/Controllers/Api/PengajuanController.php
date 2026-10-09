@@ -27,7 +27,7 @@ class PengajuanController extends CrudController
 
     protected array $with = ['warga:id,nama,nik'];
 
-    protected array $withCount = ['lampirans'];
+    protected array $withCount = ['lampirans', 'suratKeluar'];
 
     protected function title(Model $record): string
     {
@@ -58,7 +58,7 @@ class PengajuanController extends CrudController
 
     public function show(int $id): JsonResponse
     {
-        return response()->json(['data' => Pengajuan::with(['warga.keluarga', 'riwayat.user:id,name', 'lampirans'])->findOrFail($id)]);
+        return response()->json(['data' => Pengajuan::with(['warga.keluarga', 'riwayat.user:id,name', 'lampirans', 'suratKeluar:id,pengajuan_id,nomor,status'])->findOrFail($id)]);
     }
 
     public function store(Request $request): JsonResponse

@@ -1,72 +1,111 @@
-name: Automated Deploy to Hostinger
+name: Deploy ke Hostinger
 
+# Berjalan otomatis setiap push ke main, atau manual dari tab Actions → "Run workflow".
 on:
   push:
-    branches:
-      - main # Robot bergerak otomatis setiap Anda push ke branch main
+    branches: [main]
+  workflow_dispatch:
+
+# Jangan biarkan dua deploy berjalan bersamaan (mis. dua push beruntun).
+concurrency:
+  group: deploy-produksi
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      # 1. Mengunduh kode terbaru dari repositori GitHub
-      - name: Checkout Code
+      # 1. Ambil kode
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Menyiapkan Node.js di server GitHub untuk memproses Vue
+      # 2. Build frontend Vue di server GitHub (Node tidak perlu ada di hosting)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      # 3. Compile / Build Vue (Frontend) secara otomatis
-      - name: Build Vue Frontend
+      - name: Build frontend
+        working-directory: frontend
         run: |
-          cd frontend
-          npm install
+          npm ci
           npm run build
+          test -f dist/index.html
 
-      # 4. Mengunggah hasil kompilasi Vue ke folder public_html Hostinger
-      - name: Deploy Frontend via SSH/SCP
-        uses: appleboy/scp-action@v0.1.7 # 👈 DIUPDATE KE VERSI TERBARU
+      # 3. Unggah hasil build ke folder SEMENTARA ~/sirta-build (belum tampil ke pengunjung).
+      #    Baru dipindah ke public_html pada langkah 4, setelah backend berhasil diperbarui.
+      - name: Unggah hasil build
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT }}
-          source: 'frontend/dist/*'
-          target: 'domains/sirta.org/public_html'
-          strip_components:
-            2
+          source: frontend/dist/*
+          target: sirta-build
+          strip_components: 2
+          rm: true
 
-      # 5. Masuk ke server Hostinger untuk melakukan update otomatis pada Backend Laravel
-      - name: Deploy Backend via SSH Command
+      # 4. Perbarui backend, jalankan migrasi, lalu pasang frontend.
+      - name: Deploy di server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT }}
+          command_timeout: 15m
           script: |
-            # 1. Masuk ke folder backend proyek Anda di dalam public_html
-            cd domains/sirta.org/public_html/backend
+            set -euo pipefail
 
-            # 2. Pastikan inisialisasi Git ada di folder ini agar tidak muncul "not a git repository"
-            if [ ! -d ".git" ]; then
-              git init
-              git remote add origin https://github.com
+            APP="$HOME/sirta"                               # salinan repo (di luar public_html)
+            WEB="$HOME/domains/sirta.org/public_html"       # folder publik situs
+            BUILD="$HOME/sirta-build"                       # hasil build dari langkah 3
+            PHP=/usr/bin/php                                # PHP 8.3 (cek: /usr/bin/php -v)
+
+            if [ ! -d "$APP/.git" ]; then
+              echo "❌ $APP belum disiapkan. Ikuti DEPLOY.md bagian 3 (pemasangan pertama)."
+              exit 1
             fi
+            if [ ! -f "$BUILD/index.html" ]; then
+              echo "❌ Hasil build frontend tidak ditemukan di $BUILD."
+              exit 1
+            fi
+            echo "PHP: $($PHP -r 'echo PHP_VERSION;')"
 
-            # 3. Daftarkan folder sebagai safe directory di Linux
-            git config --global --add safe.directory $(pwd)
-
-            # 4. Ambil kode terbaru dari GitHub ke server
-            git fetch --all
+            echo "▶ 1/4 Memperbarui kode dari GitHub"
+            cd "$APP"
+            git fetch --prune origin main
             git reset --hard origin/main
+            echo "   commit: $(git log -1 --format='%h %s')"
 
-            # 5. Jalankan optimasi Laravel menggunakan jalur asli PHP server Hostinger
-            /usr/bin/php artisan migrate --force
-            /usr/bin/php artisan config:clear
-            /usr/bin/php artisan route:clear
-            /usr/bin/php artisan optimize:clear
+            echo "▶ 2/4 Backend: pustaka PHP & migrasi database"
+            cd "$APP/backend"
+            composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+            $PHP artisan down --retry=15 || true
+            trap '$PHP artisan up || true' EXIT          # situs selalu dinyalakan kembali, walau ada langkah gagal
+            $PHP artisan migrate --force
+            $PHP artisan optimize:clear
+            $PHP artisan up
+            trap - EXIT
+
+            echo "▶ 3/4 Frontend & aturan server"
+            mkdir -p "$WEB/assets" "$WEB/core-api"
+            cp -R "$BUILD/assets/." "$WEB/assets/"
+            find "$BUILD" -maxdepth 1 -type f ! -name index.html -exec cp {} "$WEB/" \;
+            cp "$APP/deploy/core-api/index.php" "$WEB/core-api/index.php"
+            cp "$APP/deploy/core-api/.user.ini" "$WEB/core-api/.user.ini"   # batas unggah PHP untuk Laravel
+            cp "$APP/deploy/public_html.htaccess" "$WEB/.htaccess"
+            cp "$BUILD/index.html" "$WEB/index.html"    # terakhir: halaman baru dipakai setelah semua asetnya siap
+            find "$WEB/assets" -type f -mtime +14 -delete # buang aset rilis lama (lebih dari 14 hari)
+
+            echo "▶ 4/4 Pemeriksaan kesiapan"
+            $PHP artisan sirta:periksa || echo "⚠ Ada hal yang perlu diperhatikan — lihat daftar di atas."
+            echo "✅ Deploy selesai"

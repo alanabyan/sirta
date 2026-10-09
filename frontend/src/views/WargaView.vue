@@ -225,7 +225,7 @@
 								</div>
 							</div>
 						</td>
-						<td class="mono">{{ w.nik_samar || '—' }}</td>
+						<td class="mono">{{ w.nik_samar || 'NIK menyusul' }}</td>
 						<td>{{ w.umur }} th</td>
 						<td>
 							<template v-if="w.keluarga"
@@ -242,7 +242,7 @@
 							>
 						</td>
 						<td>{{ w.pekerjaan || '—' }}</td>
-						<td><StatusBadge :status="w.status" /></td>
+						<td><StatusBadge :status="w.status" /><div v-if="w.status !== 'Aktif' && w.mutasi_terakhir" class="cell-sub">{{ w.mutasi_terakhir.jenis === 'meninggal' ? 'Meninggal' : 'Pindah' }} {{ formatTanggal(w.mutasi_terakhir.tanggal, true) }}<template v-if="w.mutasi_terakhir.keterangan"> · {{ w.mutasi_terakhir.keterangan }}</template></div></td>
 						<td
 							v-if="auth.canWrite"
 							class="actions"

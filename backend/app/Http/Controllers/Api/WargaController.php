@@ -19,7 +19,7 @@ class WargaController extends CrudController
 
     protected array $filters = ['jenis_kelamin', 'status', 'keluarga_id'];
 
-    protected array $with = ['keluarga:id,no_kk,kepala_keluarga,alamat'];
+    protected array $with = ['keluarga:id,no_kk,kepala_keluarga,alamat', 'mutasiTerakhir:id,warga_id,jenis,tanggal,keterangan'];
 
     protected function rules(?Model $record): array
     {

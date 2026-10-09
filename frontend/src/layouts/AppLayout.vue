@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Home, Users, UsersRound, Award, FilePlus2, ClipboardCheck, Search, Inbox, Send,
-  FileText, Archive, Settings, PenLine, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X,
+  FileText, Archive, Settings, PenLine, FileSpreadsheet, ArrowLeftRight, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X,
 } from 'lucide-vue-next'
 import { useAuth } from '@/stores/auth'
 import { useUi } from '@/stores/ui'
@@ -18,7 +18,7 @@ const route = useRoute()
 const router = useRouter()
 
 const menu = computed(() => [
-  { items: [{ to: '/', label: 'Beranda', icon: Home }] },
+  { items: [{ to: '/', label: 'Beranda', icon: Home }, ...(auth.canDecide ? [{ to: '/laporan', label: 'Laporan & Ekspor', icon: FileSpreadsheet }] : [])] },
   {
     title: 'Pelayanan Warga',
     items: [
@@ -41,6 +41,7 @@ const menu = computed(() => [
     items: [
       { to: '/warga', label: 'Data Warga', icon: Users },
       { to: '/keluarga', label: 'Data Keluarga', icon: UsersRound },
+      ...(auth.canDecide ? [{ to: '/mutasi', label: 'Mutasi Warga', icon: ArrowLeftRight }] : []),
       { to: '/pengurus', label: 'Pengurus RT', icon: Award },
     ],
   },

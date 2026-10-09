@@ -27,7 +27,7 @@ class UserController extends CrudController
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'username' => ['required', 'alpha_dash', 'max:50', Rule::unique('users', 'username')->ignore($record?->id)],
+            'username' => ['required', 'regex:/^[A-Za-z0-9._-]+$/', 'max:50', Rule::unique('users', 'username')->ignore($record?->id)],
             'password' => [$record ? 'nullable' : 'required', 'string', 'min:8'],
             'role' => ['required', Rule::in(array_keys(User::ROLES))],
             'is_active' => ['boolean'],

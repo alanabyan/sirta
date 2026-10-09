@@ -17,9 +17,11 @@ const routes = [
       { path: '', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { title: 'Beranda', subtitle: 'Ringkasan kegiatan RT hari ini' } },
 
       { path: 'warga', name: 'warga', component: () => import('@/views/WargaView.vue'), meta: { title: 'Data Warga', group: 'Data Induk', subtitle: 'Daftar seluruh penduduk RT' } },
+      { path: 'mutasi', name: 'mutasi', component: () => import('@/views/MutasiView.vue'), meta: { title: 'Mutasi Warga', group: 'Data Induk', subtitle: 'Lahir, pindah, dan meninggal', roles: ['administrator', 'ketua_rt', 'sekretaris'] } },
       { path: 'keluarga', name: 'keluarga', component: () => import('@/views/KeluargaView.vue'), meta: { title: 'Data Keluarga', group: 'Data Induk', subtitle: 'Kartu Keluarga dan anggotanya' } },
       { path: 'pengurus', name: 'pengurus', component: () => import('@/views/PengurusView.vue'), meta: { title: 'Pengurus RT', group: 'Data Induk', subtitle: 'Susunan kepengurusan RT' } },
 
+      { path: 'laporan', name: 'laporan', component: () => import('@/views/LaporanView.vue'), meta: { title: 'Laporan & Ekspor', subtitle: 'Unduh Excel atau cetak PDF', roles: ['administrator', 'ketua_rt', 'sekretaris'] } },
       { path: 'layanan', name: 'layanan', component: () => import('@/views/PengajuanView.vue'), meta: { title: 'Permohonan Warga', group: 'Pelayanan Warga', subtitle: 'Semua permohonan surat dari warga' } },
       { path: 'verifikasi', name: 'verifikasi', component: () => import('@/views/VerifikasiView.vue'), meta: { title: 'Verifikasi', group: 'Pelayanan Warga', subtitle: 'Periksa dan proses permohonan yang masuk' } },
       { path: 'tracking', name: 'tracking', component: () => import('@/views/TrackingView.vue'), meta: { title: 'Lacak Permohonan', group: 'Pelayanan Warga', subtitle: 'Lihat perjalanan sebuah permohonan' } },

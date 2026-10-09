@@ -1,0 +1,63 @@
+# ============================================================================
+#  SIRTA — aturan server untuk folder utama situs (public_html)
+#  Salin berkas ini SEKALI ke:  domains/sirta.org/public_html/.htaccess
+#  (nama harus persis ".htaccess"; berkas ini berlaku untuk Apache & LiteSpeed/Hostinger)
+#
+#  Berkas ini DISALIN OTOMATIS oleh GitHub Actions setiap deploy — ubah di repo, bukan di server.
+#
+#  Susunan folder:
+#    ~/sirta/backend/              ← kode Laravel (di LUAR public_html, tidak dapat diakses dari web)
+#    public_html/                  ← hasil build frontend (index.html, assets/ …) + berkas ini
+#    public_html/core-api/index.php ← pintu masuk Laravel untuk alamat /api/…
+# ============================================================================
+
+Options -Indexes -MultiViews
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 0) (Opsional) Paksa HTTPS. Aktifkan hanya bila SSL sudah menyala di hPanel,
+    #    lalu hapus tanda # pada dua baris berikut.
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # 1) Teruskan header Authorization ke PHP — tanpa ini login (token) gagal di sebagian hosting.
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # 2) Tolak berkas tersembunyi (.env, .git, .htaccess, …) di folder mana pun.
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # 3) Tolak akses LANGSUNG ke pintu masuk & sisa folder lama. Alamat /api/… tetap sampai ke Laravel
+    #    lewat aturan 4 (THE_REQUEST = alamat asli yang diketik pengunjung, bukan hasil penulisan ulang).
+    RewriteCond %{THE_REQUEST} \s/+(core-api|backend|storage)(/|\s|\?) [NC]
+    RewriteRule ^ - [F,L]
+
+    # 4) Semua alamat /api/… dijalankan oleh Laravel.
+    RewriteRule ^api/(.*)$ core-api/index.php [L]
+
+    # 4b) Berkas hasil build yang tidak ada → 404 asli. (Jika dijawab dengan index.html, pengunjung yang
+    #     masih menyimpan halaman lama akan mendapat HTML sebagai JavaScript → layar putih setelah rilis baru.)
+    RewriteRule ^assets/ - [L]
+
+    # 5) Alamat lain: sajikan berkas bila ada (JS/CSS/gambar); jika tidak, serahkan ke aplikasi Vue
+    #    agar halaman seperti /warga atau /lacak/PL-2026-0001 tidak "404" saat di-refresh.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Berkas hasil build memakai nama ber-hash → aman di-cache lama. index.html jangan di-cache
+# supaya rilis baru langsung terpakai.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|woff2?|png|jpe?g|svg|ico|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "^index\.html$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

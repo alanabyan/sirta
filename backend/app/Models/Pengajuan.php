@@ -24,6 +24,11 @@ class Pengajuan extends Model
         return $this->belongsTo(Warga::class);
     }
 
+    public function suratKeluar()
+    {
+        return $this->hasOne(SuratKeluar::class);
+    }
+
     public function lampirans()
     {
         return $this->hasMany(PengajuanLampiran::class);

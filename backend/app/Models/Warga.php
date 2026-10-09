@@ -33,6 +33,17 @@ class Warga extends Model
         return $this->belongsTo(Keluarga::class);
     }
 
+    public function mutasis()
+    {
+        return $this->hasMany(Mutasi::class);
+    }
+
+    /** Mutasi terakhir yang masih berlaku — untuk keterangan di daftar warga. */
+    public function mutasiTerakhir()
+    {
+        return $this->hasOne(Mutasi::class)->whereNull('dibatalkan_at')->latestOfMany('tanggal');
+    }
+
     public function pengajuans()
     {
         return $this->hasMany(Pengajuan::class);

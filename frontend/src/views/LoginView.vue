@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { defineAsyncComponent, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Home, Eye, EyeOff, Search, FilePlus2, ShieldCheck, FileCheck2, Users } from 'lucide-vue-next'
 import { useAuth } from '@/stores/auth'
@@ -31,11 +31,8 @@ async function submit() {
   }
 }
 
-const demo = [
-  ['Administrator', 'admin'],
-  ['Ketua RT', 'ketua.rt'],
-  ['Sekretaris', 'sekretaris'],
-]
+// Kotak akun contoh hanya dimuat saat `npm run dev`; Vite membuang cabang ini dari build produksi.
+const DemoAkun = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DemoAkun.vue')) : null
 </script>
 
 <template>
@@ -75,12 +72,7 @@ const demo = [
 
         <div class="warga-box"><b>Anda warga?</b><span>Tidak perlu akun.</span><div class="row"><RouterLink class="btn btn-soft btn-sm grow" to="/ajukan"><FilePlus2 :size="15" /> Ajukan surat</RouterLink><RouterLink class="btn btn-secondary btn-sm grow" to="/lacak"><Search :size="15" /> Lacak</RouterLink></div></div>
 
-        <div class="demo">
-          <b>Akun contoh</b> — kata sandi semua akun: <code>password</code>
-          <div class="row row-wrap" style="margin-top:8px">
-            <button v-for="d in demo" :key="d[1]" type="button" class="chip" @click="form.username = d[1]; form.password = 'password'">{{ d[0] }}</button>
-          </div>
-        </div>
+        <component :is="DemoAkun" v-if="DemoAkun" @pilih="(u) => { form.username = u; form.password = 'password' }" />
       </form>
     </section>
   </div>
@@ -108,10 +100,6 @@ small { opacity: .7; margin-top: 10px; }
 .pw .btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
 .warga-box { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 13px; }
 .warga-box > span { color: var(--muted); margin-top: -6px; }
-.demo { background: var(--surface-2); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
-.demo code { background: var(--primary-soft); color: var(--primary-strong); padding: 1px 6px; border-radius: 6px; }
-.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 12px; font-size: 12.5px; font-weight: 600; }
-.chip:hover { border-color: var(--primary); color: var(--primary); }
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; }
   .intro { padding: 32px 24px; }

@@ -39,6 +39,7 @@ const STATUS_WARNA = {
   Selesai: 'var(--ok)',
   Ditolak: 'var(--bad)',
 }
+const totalBulanIni = computed(() => Object.values(data.value?.status ?? {}).reduce((a, b) => a + b, 0))
 const statusTotal = computed(() => Object.values(data.value?.status ?? {}).reduce((a, b) => a + b, 0) || 1)
 
 const ikonAktivitas = { plus: Plus, edit: Pencil, trash: Trash2, check: Check, x: X, archive: Archive, login: LogIn, info: Info }
@@ -78,10 +79,15 @@ const aksiCepat = computed(() => {
         <div><h3>Perlu perhatian Anda</h3><p>Hal-hal yang sebaiknya segera ditindaklanjuti.</p></div>
       </div>
       <div class="card-body todo-list">
-        <template v-if="data.kpi.perlu_verifikasi || data.kpi.surat_baru">
+        <template v-if="data.kpi.perlu_verifikasi || data.kpi.perlu_surat || data.kpi.surat_baru">
           <RouterLink v-if="data.kpi.perlu_verifikasi" to="/verifikasi" class="todo-item amber">
             <ClipboardCheck :size="22" />
             <span class="grow"><b>{{ data.kpi.perlu_verifikasi }} permohonan menunggu verifikasi</b><small>Warga menunggu jawaban. Periksa dan proses sekarang.</small></span>
+            <ArrowRight :size="18" />
+          </RouterLink>
+          <RouterLink v-if="data.kpi.perlu_surat" to="/layanan?status=Diproses" class="todo-item violet">
+            <Send :size="22" />
+            <span class="grow"><b>{{ data.kpi.perlu_surat }} permohonan diproses, suratnya belum dibuat</b><small>Buat surat agar permohonan bisa diselesaikan.</small></span>
             <ArrowRight :size="18" />
           </RouterLink>
           <RouterLink v-if="data.kpi.surat_baru" to="/surat-masuk" class="todo-item blue">
@@ -132,9 +138,10 @@ const aksiCepat = computed(() => {
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3>Status permohonan</h3><p>Seluruh permohonan, berdasarkan tahap.</p></div></div>
+        <div class="card-head"><div><h3>Status permohonan</h3><p>Permohonan yang masuk bulan ini, berdasarkan tahap.</p></div></div>
         <div class="card-body">
-          <div class="stackbar">
+          <p v-if="!totalBulanIni" class="muted" style="margin-bottom:12px">Belum ada permohonan bulan ini.</p>
+          <div v-else class="stackbar">
             <i v-for="(n, s) in data.status" :key="s" :style="{ width: (n / statusTotal) * 100 + '%', background: STATUS_WARNA[s] }" :title="`${s}: ${n}`" />
           </div>
           <ul class="legend">
@@ -209,6 +216,7 @@ const aksiCepat = computed(() => {
 .todo-item small { color: var(--muted); font-size: 12.5px; }
 .todo-item.amber { background: var(--warn-soft); } .todo-item.amber > svg:first-child { color: var(--warn); }
 .todo-item.blue { background: var(--info-soft); } .todo-item.blue > svg:first-child { color: var(--info); }
+.todo-item.violet { background: var(--violet-soft); } .todo-item.violet > svg:first-child { color: var(--violet); }
 .todo-item.green { background: var(--ok-soft); } .todo-item.green > svg:first-child { color: var(--ok); }
 
 .stat { display: flex; align-items: center; gap: 16px; padding: 18px 20px; text-decoration: none !important; color: var(--text); transition: transform .12s, border-color .12s; }

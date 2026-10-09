@@ -5,6 +5,11 @@
 
     RewriteEngine On
 
+    # Bila Laravel ditaruh di subfolder /backend (hosting bersama), alamat luar harus lewat /api —
+    # bukan langsung ke /backend/public/... (alamat asli yang diketik pengunjung ada di THE_REQUEST).
+    RewriteCond %{THE_REQUEST} \s/+backend(/|\s|\?) [NC]
+    RewriteRule ^ - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

@@ -25,6 +25,11 @@ class SuratKeluar extends Model
         return ['tanggal' => 'date:Y-m-d', 'diterbitkan_at' => 'datetime'];
     }
 
+    public function pengajuan()
+    {
+        return $this->belongsTo(Pengajuan::class);
+    }
+
     public function template()
     {
         return $this->belongsTo(TemplateSurat::class, 'template_surat_id');

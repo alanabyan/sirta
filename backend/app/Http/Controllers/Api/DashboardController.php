@@ -33,7 +33,8 @@ class DashboardController extends Controller
             ];
         })->values();
 
-        $status = collect(Pengajuan::STATUS)->mapWithKeys(fn ($s) => [$s => Pengajuan::where('status', $s)->count()]);
+        $awal = now()->startOfMonth();
+        $status = collect(Pengajuan::STATUS)->mapWithKeys(fn ($s) => [$s => Pengajuan::where('status', $s)->where('created_at', '>=', $awal)->count()]);
 
         return response()->json(['data' => [
             'kpi' => [
@@ -41,6 +42,7 @@ class DashboardController extends Controller
                 'keluarga' => Keluarga::count(),
                 'pengajuan_aktif' => Pengajuan::whereIn('status', ['Menunggu Verifikasi', 'Diproses'])->count(),
                 'perlu_verifikasi' => Pengajuan::where('status', 'Menunggu Verifikasi')->count(),
+                'perlu_surat' => Pengajuan::where('status', 'Diproses')->doesntHave('suratKeluar')->count(),
                 'surat_baru' => SuratMasuk::where('status', 'Baru')->count(),
                 'arsip' => Arsip::count(),
             ],

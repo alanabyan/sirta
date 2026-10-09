@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Aktivitas;
 use App\Models\Arsip;
 use App\Models\Keluarga;
+use App\Models\Mutasi;
 use App\Models\Pengajuan;
 use App\Models\Pengaturan;
 use App\Models\Pengurus;
@@ -30,6 +31,7 @@ Desa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi",
         ]);
         $kk = $this->keluarga();
         $warga = $this->warga($kk);
+        $this->mutasi($kk, $warga);
         $this->pengurus();
         $templates = $this->templates();
         $this->surat($templates);
@@ -99,6 +101,26 @@ Desa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi",
         return $ids;
     }
 
+    /** Contoh mutasi bulan ini: satu kelahiran, satu pindah masuk, satu pindah keluar. */
+    private function mutasi(array $kk, array $warga): void
+    {
+        $bayi = Warga::create([
+            'nama' => 'Aisyah Putri Fauzan', 'jenis_kelamin' => 'Perempuan', 'tanggal_lahir' => now()->subDays(7)->toDateString(),
+            'keluarga_id' => $kk['fauzan'], 'hubungan_keluarga' => 'Anak', 'status' => 'Aktif', // NIK menyusul
+        ]);
+        Mutasi::create(['warga_id' => $bayi->id, 'nama_warga' => $bayi->nama, 'jenis' => 'lahir', 'tanggal' => now()->subDays(7), 'keterangan' => 'Putri dari Ahmad Fauzan dan Siti Nurhayati', 'user_id' => 3]);
+
+        $baru = Warga::create([
+            'nik' => '3275010505880013', 'nama' => 'Rudi Hartono', 'jenis_kelamin' => 'Laki-laki', 'tanggal_lahir' => '1988-05-05',
+            'pekerjaan' => 'Karyawan Swasta', 'status' => 'Aktif',
+        ]);
+        Mutasi::create(['warga_id' => $baru->id, 'nama_warga' => $baru->nama, 'jenis' => 'masuk', 'tanggal' => now()->subDays(4), 'keterangan' => 'Pindahan dari Cikarang Barat', 'user_id' => 3]);
+
+        $pergi = Warga::find($warga[10]); // Hendra Wijaya
+        $pergi->update(['status' => 'Pindah']);
+        Mutasi::create(['warga_id' => $pergi->id, 'nama_warga' => $pergi->nama, 'jenis' => 'keluar', 'tanggal' => now()->subDays(2), 'keterangan' => 'Pindah ke Bandung', 'status_sebelum' => 'Aktif', 'user_id' => 3]);
+    }
+
     private function pengurus(): void
     {
         foreach ([
@@ -111,26 +133,7 @@ Desa Sukajaya, Kecamatan Cibitung, Kabupaten Bekasi",
 
     private function templates(): array
     {
-        $rows = [
-            ['SK-PENGANTAR', 'Surat Pengantar', 'Pengantar administrasi warga ke instansi lain',
-                "SURAT PENGANTAR\nNomor: {{nomor}}\n\nYang bertanda tangan di bawah ini, Ketua RT 03 RW 20, menerangkan bahwa:\n\nNama : {{nama}}\nNIK : {{nik}}\nAlamat : {{alamat}}\n\nAdalah benar warga kami dan bermaksud mengurus: {{keperluan}}.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n{{ttd}}"],
-            ['SK-DOMISILI', 'Surat Domisili', 'Keterangan bertempat tinggal di lingkungan RT',
-                "SURAT KETERANGAN DOMISILI\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}) benar berdomisili di {{alamat}}, wilayah RT 03 / RW 20.\n\nKeperluan: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n{{ttd}}"],
-            ['SK-KET', 'Surat Keterangan', 'Keterangan umum dari RT',
-                "SURAT KETERANGAN\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20.\n\nSurat ini dibuat untuk keperluan: {{keperluan}}.\n\n{{ttd}}"],
-            ['SK-UND', 'Surat Undangan', 'Undangan kegiatan atau rapat warga',
-                "UNDANGAN\nNomor: {{nomor}}\n\nKepada Yth. Bapak/Ibu Warga RT 03\n\nDiharapkan kehadiran Bapak/Ibu pada kegiatan: {{keperluan}}.\n\nDemikian undangan ini disampaikan, atas perhatian dan kehadirannya diucapkan terima kasih.\n\n{{ttd}}"],
-            ['SK-NIKAH', 'Surat Pengantar Nikah', 'Pengantar administrasi pernikahan',
-                "SURAT PENGANTAR NIKAH\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, adalah warga RT 03 / RW 20 dan bermaksud melangsungkan pernikahan.\n\nDemikian surat pengantar ini dibuat untuk dipergunakan sebagaimana mestinya.\n\n{{ttd}}"],
-            ['SK-USAHA', 'Surat Keterangan Usaha', 'Keterangan usaha milik warga',
-                "SURAT KETERANGAN USAHA\nNomor: {{nomor}}\n\nMenerangkan bahwa {{nama}} (NIK {{nik}}), beralamat di {{alamat}}, memiliki usaha: {{keperluan}}.\n\nDemikian surat keterangan ini dibuat dengan sebenarnya.\n\n{{ttd}}"],
-        ];
-        $out = [];
-        foreach ($rows as [$kode, $nama, $desk, $isi]) {
-            $out[$kode] = TemplateSurat::create(compact('kode', 'nama', 'isi') + ['deskripsi' => $desk])->id;
-        }
-
-        return $out;
+        return (new TemplateSuratSeeder)->buat();
     }
 
     private function surat(array $tpl): void

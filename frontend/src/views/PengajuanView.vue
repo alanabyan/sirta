@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { Plus, Search, Eye, FilePlus2, Trash2, Paperclip } from 'lucide-vue-next'
+import { Plus, Search, Eye, FilePlus2, Trash2, Paperclip, Mail } from 'lucide-vue-next'
 import api from '@/api'
 import { useAuth } from '@/stores/auth'
 import { useList } from '@/composables/useList'
@@ -21,7 +21,7 @@ const TAB = [['', 'Semua'], ['Menunggu Verifikasi', 'Menunggu verifikasi'], ['Di
 
 const auth = useAuth()
 const route = useRoute()
-const list = useList('/pengajuan', { filters: { status: '', layanan: '' } })
+const list = useList('/pengajuan', { filters: { status: route.query.status ? String(route.query.status) : '', layanan: '' } })
 const { saving, errors, save } = useSave('/pengajuan')
 
 const wargaOpsi = ref([])
@@ -76,7 +76,7 @@ onMounted(async () => {
         <thead><tr><th>Kode</th><th>Pemohon</th><th>Layanan</th><th>Diajukan</th><th>Status</th><th /></tr></thead>
         <tbody>
           <tr v-for="p in list.items.value" :key="p.id">
-            <td class="cell-title mono">{{ p.kode }} <span v-if="p.sumber === 'mandiri'" class="badge plain tone-violet" title="Diajukan sendiri oleh warga">Mandiri</span> <span v-if="p.lampirans_count" class="clip" :title="`${p.lampirans_count} lampiran`"><Paperclip :size="14" />{{ p.lampirans_count }}</span></td>
+            <td class="cell-title mono">{{ p.kode }} <span v-if="p.sumber === 'mandiri'" class="badge plain tone-violet" title="Diajukan sendiri oleh warga">Mandiri</span> <span v-if="p.surat_keluar_count" class="clip surat" title="Surat sudah dibuat"><Mail :size="14" /></span> <span v-if="p.lampirans_count" class="clip" :title="`${p.lampirans_count} lampiran`"><Paperclip :size="14" />{{ p.lampirans_count }}</span></td>
             <td>{{ p.warga?.nama }}</td>
             <td>{{ p.layanan }}</td>
             <td>{{ formatTanggal(p.created_at, true) }}</td>
@@ -111,5 +111,6 @@ onMounted(async () => {
 .tabs button:hover { color: var(--text); }
 .tabs button.on { color: var(--primary); border-color: var(--primary); }
 .toolbar { border-bottom: 1px solid var(--line); }
+.clip.surat { color: var(--ok); }
 .clip { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 12px; font-weight: 600; vertical-align: middle; }
 </style>

@@ -97,6 +97,9 @@ async function unduhLampiran(l) {
 function buatSurat() {
   router.push({ path: '/surat-keluar', query: { pengajuan: p.value.id } })
 }
+function lihatSurat() {
+  router.push({ path: '/surat-keluar', query: { q: p.value.surat_keluar.nomor } })
+}
 
 onMounted(load)
 </script>
@@ -113,6 +116,11 @@ onMounted(load)
         <dt>Keperluan</dt><dd>{{ p.keperluan || '—' }}</dd>
         <dt>Diajukan</dt><dd>{{ formatTanggal(p.created_at) }}</dd>
       </dl>
+
+      <div v-if="p.surat_keluar" class="callout tone-ok">
+        <FileCheck2 :size="18" />
+        <span>Surat sudah dibuat: <b>{{ p.surat_keluar.nomor }}</b> ({{ p.surat_keluar.status }}).</span>
+      </div>
 
       <div v-if="p.lampirans?.length" class="lamp">
         <h4><Paperclip :size="16" /> Lampiran dari pemohon ({{ p.lampirans.length }})</h4>
@@ -150,12 +158,14 @@ onMounted(load)
       <template v-else-if="bisaPutuskan">
         <span class="hint grow">Siapkan surat, lalu tandai selesai agar warga tahu.</span>
         <button type="button" class="btn btn-danger" :disabled="busy" @click="mulaiTolak"><X :size="17" /> Batalkan…</button>
-        <button type="button" class="btn btn-secondary" @click="buatSurat"><Send :size="16" /> Buat surat</button>
+        <button v-if="p.surat_keluar" type="button" class="btn btn-secondary" @click="lihatSurat"><Send :size="16" /> Lihat surat</button>
+        <button v-else type="button" class="btn btn-secondary" @click="buatSurat"><Send :size="16" /> Buat surat</button>
         <button type="button" class="btn btn-primary" :disabled="busy" @click="ubah('Selesai', 'Surat dapat diambil di sekretariat RT.')"><FileCheck2 :size="17" /> Tandai selesai</button>
       </template>
       <template v-else-if="bisaBuatSurat">
-        <span class="hint grow">Permohonan selesai. Surat belum dibuat?</span>
-        <button type="button" class="btn btn-primary" @click="buatSurat"><Send :size="16" /> Buat surat keluar</button>
+        <span class="hint grow">{{ p.surat_keluar ? 'Permohonan selesai dan suratnya sudah dibuat.' : 'Permohonan selesai. Surat belum dibuat?' }}</span>
+        <button v-if="p.surat_keluar" type="button" class="btn btn-primary" @click="lihatSurat"><Send :size="16" /> Lihat surat</button>
+        <button v-else type="button" class="btn btn-primary" @click="buatSurat"><Send :size="16" /> Buat surat keluar</button>
       </template>
     </template>
   </BaseModal>

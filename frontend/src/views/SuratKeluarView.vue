@@ -23,13 +23,14 @@ const route = useRoute()
 const router = useRouter()
 const list = useList('/surat-keluar', { filters: { status: '' } })
 const { saving, errors, save } = useSave('/surat-keluar')
+if (route.query.q) list.q.value = String(route.query.q) // datang dari permohonan: langsung menyaring surat terkait
 
 const templates = ref([])
 const wargaOpsi = ref([])
 
 const kosong = () => ({
   id: null, nomor: '', tanggal: hariIni(), tujuan: '', perihal: '', isi: '', status: 'Draft',
-  template_surat_id: '', warga_id: '', keperluan: '',
+  template_surat_id: '', warga_id: '', keperluan: '', pengajuan_id: '', pengajuan_kode: '',
 })
 const form = reactive(kosong())
 const showForm = ref(false)
@@ -61,15 +62,16 @@ async function susun() {
 }
 
 function buka(s, prefill = {}) {
-  Object.assign(form, kosong(), s ? { ...s, template_surat_id: s.template_surat_id ?? '', isi: s.isi ?? '' } : {}, prefill)
+  Object.assign(form, kosong(), s ? { ...s, template_surat_id: s.template_surat_id ?? '', isi: s.isi ?? '', pengajuan_id: s.pengajuan_id ?? '', pengajuan_kode: s.pengajuan?.kode ?? '' } : {}, prefill)
   errors.value = {}
   showForm.value = true
   if (!s && form.template_surat_id) susun()
 }
 
 async function simpan() {
-  const { id, warga_id, keperluan, ...payload } = form
+  const { id, warga_id, keperluan, pengajuan_kode, ...payload } = form
   payload.template_surat_id = payload.template_surat_id || null
+  payload.pengajuan_id = payload.pengajuan_id || null
   if (!id) payload.nomor = ''
   const hasil = await save(id, payload)
   if (hasil) {
@@ -107,8 +109,15 @@ onMounted(async () => {
   if (route.query.pengajuan && auth.canWrite) {
     try {
       const p = (await api.get(`/pengajuan/${route.query.pengajuan}`)).data.data
+      if (p.surat_keluar) {
+        // Sudah pernah dibuatkan surat → arahkan ke surat itu, jangan dobel.
+        ui.error(`Permohonan ${p.kode} sudah dibuatkan surat ${p.surat_keluar.nomor}.`)
+        list.q.value = p.surat_keluar.nomor
+        router.replace({ query: {} })
+        return
+      }
       const t = templates.value.find((x) => x.nama === p.layanan)
-      buka(null, { template_surat_id: t?.id ?? '', warga_id: p.warga_id, keperluan: p.keperluan ?? '', tujuan: p.warga.nama, perihal: `${p.layanan} — ${p.warga.nama}`, status: auth.canDecide ? 'Diterbitkan' : 'Draft' })
+      buka(null, { pengajuan_id: p.id, pengajuan_kode: p.kode, template_surat_id: t?.id ?? '', warga_id: p.warga_id, keperluan: p.keperluan ?? '', tujuan: p.warga.nama, perihal: `${p.layanan} — ${p.warga.nama}`, status: auth.canDecide ? 'Diterbitkan' : 'Draft' })
       await susun()
     } catch (e) {
       ui.error(errorMessage(e))
@@ -143,7 +152,7 @@ onMounted(async () => {
             <td class="cell-title mono">{{ s.nomor }}</td>
             <td>{{ formatTanggal(s.tanggal, true) }}</td>
             <td>{{ s.tujuan }}</td>
-            <td>{{ s.perihal }}<div v-if="s.template" class="cell-sub">Template: {{ s.template.nama }}</div></td>
+            <td>{{ s.perihal }}<div v-if="s.pengajuan" class="cell-sub">Dari permohonan <b>{{ s.pengajuan.kode }}</b></div><div v-else-if="s.template" class="cell-sub">Template: {{ s.template.nama }}</div></td>
             <td><StatusBadge :status="s.status" /></td>
             <td class="actions">
               <button v-if="auth.canWrite" class="btn btn-soft btn-sm" @click="cetak(s)"><Printer :size="15" /> Cetak</button>
@@ -161,6 +170,9 @@ onMounted(async () => {
 
   <BaseModal v-if="showForm" :title="form.id ? `Ubah surat ${form.nomor}` : 'Buat surat keluar'" subtitle="Pilih template (dan warga) agar isi surat terisi otomatis." size="lg" :saving="saving" @close="showForm = false" @save="simpan">
     <div class="form-grid">
+      <div v-if="form.pengajuan_kode" class="full callout tone-info">
+        <span>Surat ini dibuat untuk permohonan <b>{{ form.pengajuan_kode }}</b>. {{ errors.pengajuan_id }}</span>
+      </div>
       <FormField v-if="!form.id" label="Template surat" :error="errors.template_surat_id">
         <select v-model="form.template_surat_id" class="select">
           <option value="">— Tanpa template —</option>
