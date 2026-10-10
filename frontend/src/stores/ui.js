@@ -8,6 +8,7 @@ export const useUi = defineStore('ui', {
     confirm: null, // { title, message, confirmText, danger, resolve }
     theme: localStorage.getItem('sirta_theme') || 'light',
     sidebarOpen: false,
+    tourAktif: false, // panduan berjalan → semua kelompok menu dibuka agar bisa disorot
   }),
   actions: {
     toast(message, type = 'success') {

@@ -3,19 +3,21 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Home, Users, UsersRound, Award, FilePlus2, ClipboardCheck, Search, Inbox, Send,
-  FileText, Archive, Settings, PenLine, FileSpreadsheet, ArrowLeftRight, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X,
+  FileText, Archive, Settings, PenLine, FileSpreadsheet, ArrowLeftRight, Menu, Moon, Sun, LogOut, KeyRound, ChevronDown, X, CircleHelp,
 } from 'lucide-vue-next'
 import { useAuth } from '@/stores/auth'
 import { useUi } from '@/stores/ui'
 import { useAntrean } from '@/stores/antrean'
 import { inisial } from '@/utils'
 import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
+import { useTour } from '@/tour/useTour'
 
 const auth = useAuth()
 const ui = useUi()
 const antrean = useAntrean()
 const route = useRoute()
 const router = useRouter()
+const tour = useTour()
 
 const menu = computed(() => [
   { items: [{ to: '/', label: 'Beranda', icon: Home }, ...(auth.canDecide ? [{ to: '/laporan', label: 'Laporan & Ekspor', icon: FileSpreadsheet }] : [])] },
@@ -59,7 +61,10 @@ const menu = computed(() => [
 const hitung = (m) => (m.badge ? antrean[m.badge] : 0)
 const hitungGrup = (g) => g.items.reduce((n, m) => n + hitung(m), 0)
 
-onMounted(() => antrean.start())
+onMounted(() => {
+  antrean.start()
+  tour.mulaiOtomatis() // pengguna baru: panduan sesuai perannya
+})
 onUnmounted(() => antrean.stop())
 
 const isActive = (to) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
@@ -67,7 +72,7 @@ const isActive = (to) => (to === '/' ? route.path === '/' : route.path.startsWit
 // Grup menu bisa dibuka/tutup; grup yang berisi halaman aktif otomatis terbuka.
 const terbuka = reactive({})
 const grupAktif = (g) => g.items.some((m) => isActive(m.to))
-const isOpen = (g) => (g.title in terbuka ? terbuka[g.title] : grupAktif(g))
+const isOpen = (g) => ui.tourAktif || (g.title in terbuka ? terbuka[g.title] : grupAktif(g))
 const toggle = (g) => (terbuka[g.title] = !isOpen(g))
 
 const userMenu = ref(false)
@@ -93,7 +98,7 @@ async function logout() {
   <div class="shell">
     <div v-if="ui.sidebarOpen" class="scrim no-print" @click="ui.sidebarOpen = false" />
 
-    <aside class="sidebar no-print" :class="{ open: ui.sidebarOpen }">
+    <aside class="sidebar no-print" :class="{ open: ui.sidebarOpen }" data-tour="sidebar">
       <div class="brand">
         <div class="logo"><Home :size="20" /></div>
         <div class="grow">
@@ -111,7 +116,7 @@ async function logout() {
             <ChevronDown :size="14" class="chev" :class="{ open: isOpen(g) }" />
           </button>
           <div v-show="!g.title || isOpen(g)" class="group-items">
-            <RouterLink v-for="m in g.items" :key="m.to" :to="m.to" class="nav-item" :class="{ active: isActive(m.to) }">
+            <RouterLink v-for="m in g.items" :key="m.to" :to="m.to" class="nav-item" :class="{ active: isActive(m.to) }" :data-tour="`nav-${m.to}`">
               <component :is="m.icon" :size="18" />
               <span class="grow">{{ m.label }}</span>
               <span v-if="hitung(m)" class="nav-badge">{{ hitung(m) }}</span>
@@ -129,18 +134,18 @@ async function logout() {
 
     <div class="main">
       <header class="topbar no-print">
-        <button class="btn btn-icon menu-btn" aria-label="Buka menu" @click="ui.sidebarOpen = true"><Menu :size="22" /></button>
+        <button class="btn btn-icon menu-btn" aria-label="Buka menu" data-tour="menu-btn" @click="ui.sidebarOpen = true"><Menu :size="22" /></button>
         <div class="grow titles">
           <h1>{{ route.meta.title }}</h1>
           <span v-if="route.meta.subtitle">{{ route.meta.subtitle }}</span>
         </div>
 
-        <button class="btn btn-icon" :title="ui.theme === 'dark' ? 'Mode terang' : 'Mode gelap'" @click="ui.toggleTheme()">
+        <button class="btn btn-icon" :title="ui.theme === 'dark' ? 'Mode terang' : 'Mode gelap'" data-tour="tema" @click="ui.toggleTheme()">
           <component :is="ui.theme === 'dark' ? Sun : Moon" :size="20" />
         </button>
 
         <div class="user-wrap">
-          <button class="user" :aria-expanded="userMenu" @click="userMenu = !userMenu">
+          <button class="user" :aria-expanded="userMenu" data-tour="pengguna" @click="userMenu = !userMenu">
             <span class="avatar">{{ inisial(auth.user?.name) }}</span>
             <span class="who">
               <b>{{ auth.user?.name }}</b>
@@ -151,6 +156,7 @@ async function logout() {
           <div v-if="userMenu" class="menu-scrim" @click="userMenu = false" />
           <div v-if="userMenu" class="dropdown">
             <button @click="showPassword = true; userMenu = false"><KeyRound :size="16" /> Ubah kata sandi</button>
+            <button @click="userMenu = false; tour.ulangi()"><CircleHelp :size="16" /> Ulangi panduan</button>
             <button class="danger" @click="logout"><LogOut :size="16" /> Keluar</button>
           </div>
         </div>

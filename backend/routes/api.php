@@ -28,6 +28,7 @@ Route::post('/tracking', TrackingController::class)->middleware('throttle:10,1')
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/me/tour', [AuthController::class, 'tour']);
     Route::put('/password', [AuthController::class, 'updatePassword']);
 
     // Semua peran dapat melihat data.

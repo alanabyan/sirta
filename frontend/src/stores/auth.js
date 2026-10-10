@@ -19,6 +19,11 @@ export const useAuth = defineStore('auth', {
       tokenStore.set(data.token)
       this.user = data.user
     },
+    /** Tandai panduan awal selesai/dilewati (disimpan per akun di server). */
+    async tandaiTour(selesai = true) {
+      const { data } = await api.post('/me/tour', { selesai })
+      this.user = data.user
+    },
     async restore() {
       if (tokenStore.get()) {
         try {

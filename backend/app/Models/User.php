@@ -29,6 +29,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'tour_selesai_at' => 'datetime',
         ];
     }
 

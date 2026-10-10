@@ -60,7 +60,7 @@ const aksiCepat = computed(() => {
   <div v-else-if="!data" class="loading"><div class="spinner" /></div>
 
   <div v-else class="stack" style="gap:20px">
-    <section class="welcome">
+    <section class="welcome" data-tour="dash-sapaan">
       <div>
         <span class="date">{{ tanggal }}</span>
         <h2>{{ sapaan() }}, {{ auth.user?.name }} 👋</h2>
@@ -74,7 +74,7 @@ const aksiCepat = computed(() => {
     </section>
 
     <!-- Perlu tindakan -->
-    <section class="card todo">
+    <section class="card todo" data-tour="dash-perhatian">
       <div class="card-head" style="padding-bottom:6px">
         <div><h3>Perlu perhatian Anda</h3><p>Hal-hal yang sebaiknya segera ditindaklanjuti.</p></div>
       </div>
@@ -104,7 +104,7 @@ const aksiCepat = computed(() => {
     </section>
 
     <!-- Angka utama -->
-    <section class="grid grid-4">
+    <section class="grid grid-4" data-tour="dash-angka">
       <RouterLink to="/warga" class="card stat">
         <span class="ic ic-green"><Users :size="22" /></span>
         <div><small>Warga aktif</small><b>{{ data.kpi.warga }}</b></div>
@@ -123,7 +123,7 @@ const aksiCepat = computed(() => {
       </RouterLink>
     </section>
 
-    <section class="grid grid-main">
+    <section class="grid grid-main" data-tour="dash-grafik">
       <div class="card">
         <div class="card-head"><div><h3>Permohonan per bulan</h3><p>Jumlah permohonan warga dalam 6 bulan terakhir.</p></div></div>
         <div class="card-body">

@@ -50,6 +50,15 @@ class AuthController extends Controller
         return response()->json(['message' => 'Berhasil keluar.']);
     }
 
+    /** Tandai panduan awal selesai/dilewati (selesai=true, bawaan) atau reset agar tampil lagi (selesai=false). */
+    public function tour(Request $request): JsonResponse
+    {
+        $selesai = $request->validate(['selesai' => ['nullable', 'boolean']])['selesai'] ?? true;
+        $request->user()->update(['tour_selesai_at' => $selesai ? now() : null]);
+
+        return response()->json(['user' => $request->user()->fresh()]);
+    }
+
     public function updatePassword(Request $request): JsonResponse
     {
         $data = $request->validate([
